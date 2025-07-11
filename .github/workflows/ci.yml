@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Install elan
+      run: |
+        curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
+        echo "$HOME/.elan/bin" >> $GITHUB_PATH
+        
+    - name: Cache Lake packages
+      uses: actions/cache@v3
+      with:
+        path: .lake
+        key: ${{ runner.os }}-lake-${{ hashFiles('lake-manifest.json') }}
+        restore-keys: |
+          ${{ runner.os }}-lake-
+          
+    - name: Build project
+      run: |
+        cd PvsNPProof
+        lake update
+        lake build
+        
+    - name: Count sorries
+      run: |
+        cd PvsNPProof
+        echo "## Sorry Count" >> $GITHUB_STEP_SUMMARY
+        echo "Total sorries in proof files:" >> $GITHUB_STEP_SUMMARY
+        grep -r "sorry" Src/PvsNP/*.lean | wc -l >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Breakdown by file:" >> $GITHUB_STEP_SUMMARY
+        for file in Src/PvsNP/*.lean; do
+          count=$(grep -c "sorry" "$file" || echo 0)
+          echo "- $(basename $file): $count" >> $GITHUB_STEP_SUMMARY
+        done 
