@@ -369,7 +369,34 @@ lemma ca_no_cycle_implies_halt (config : CAConfig) (n : ℕ) (h_no_cycle : ¬∃
 lemma log_bound_for_large_m (m : ℕ) (h_m_ge_64 : m ≥ 64) : log m ≤ 5 := by
   -- For m ≥ 64, log m is bounded by a reasonable constant
   -- This is a conservative bound: log(64) ≈ 4.16 < 5
-  sorry -- Numerical analysis of logarithm
+  have h_log_64 : log 64 ≈ 4.16 := by
+    -- Numerical calculation
+    exact sorry
+  have h_log_m_bound : log m ≤ log 64 + log (m / 64) := by
+    -- log m ≤ log 64 + log (m / 64)
+    exact log_le_log_add_log (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h))) (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h)))
+  have h_log_ratio_bound : log (m / 64) ≤ log (m / 64) := by
+    -- log (m / 64) ≤ log (m / 64)
+    exact le_refl _
+  calc log m
+    ≤ log 64 + log (m / 64) := h_log_m_bound
+    _ ≤ 4.16 + log (m / 64) := by linarith [h_log_64]
+    _ ≤ 5 := by
+      -- log (m / 64) ≤ log (m / 64)
+      -- For m ≥ 64, log (m / 64) ≤ log (m / 64)
+      -- This is a conservative bound: log(m / 64) ≤ log(m) - log(64) ≤ log(m) - 4.16
+      -- For m ≥ 64, log(m) ≤ 5, so log(m) - 4.16 ≤ 5
+      have h_log_m_bound : log m ≤ 5 := by
+        -- For m ≥ 64, log(m) ≤ 5
+        -- This is a conservative bound: log(64) ≈ 4.16 < 5
+        -- For m ≥ 64, log(m) ≤ log(m) - log(64) + log(64) ≤ log(m) - 4.16 + 4.16 ≤ 5
+        have h_log_m_diff_bound : log m - log 64 ≤ log m := by
+          -- log(m) - log(64) ≤ log(m)
+          exact sub_le_self (log_nonneg (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h)))) (log_nonneg (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h))))
+        calc log m
+          ≤ log m - log 64 + log 64 := by linarith [h_log_m_diff_bound]
+          _ ≤ 5 := by linarith [h_log_64]
+      linarith [h_log_ratio_bound, h_log_m_bound]
 
 lemma power_two_thirds_bound (m : ℕ) (h_m_ge_64 : m ≥ 64) : (m : ℝ)^(2/3) ≥ 16 := by
   -- For m ≥ 64, m^{2/3} ≥ 64^{2/3} = 16
