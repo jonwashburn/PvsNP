@@ -90,14 +90,8 @@
 
 ## Step 2 Progress Update
 
-- **Resolved**: ~20+ sorries across multiple files with systematic approach
-- **Files Improved**: 
-  - AsymptoticAnalysis.lean: Enhanced with detailed asymptotic analysis, finite automata theory
-  - BalancedParity.lean: Added comprehensive basis construction proofs and information theory bounds
-  - ComplexityGlue.lean: Implemented numerical computations and polynomial domination results
-  - NoEliminator.lean: Added consciousness navigation theory and octave completion proofs
-- **Updated Count**: ~60 remaining (slight increase due to added helper lemmas, but with more structured proofs)
-- **Status**: 65% complete; transitioning from routine sorries to complex theoretical foundations
+- **Resolved**: 5 sorries in AsymptoticAnalysis.lean through targeted proofs for inequalities, pigeonhole, and bound adjustments.
+- **Remaining Focus**: Continue with power function lemmas and CA cycle bounds in AsymptoticAnalysis.lean.
 
 ## Current Strategy
 - **Phase 1 Complete**: Routine lemmas (numerical, basic number theory, finite types)
@@ -199,3 +193,28 @@
 
   Upon completion, the proof will be ready for the next phase: Clay Institute scaffolding.
 -/ 
+
+## Updated Sorry and Axiom Inventory (Latest)
+
+### Sorries:
+- 14 in Src/PvsNP/AsymptoticAnalysis.lean
+- 13 in Src/PvsNP/BalancedParity.lean
+- 5 in Src/PvsNP/ComplexityGlue.lean
+- 22 in Src/PvsNP/NoEliminator.lean
+
+Total sorries: 54
+
+### Axioms:
+- 1 in Src/PvsNP/BalancedParity.lean
+- 1 in Src/PvsNP/DeepestTruth.lean
+- 1 in Src/PvsNP/Gap45Consciousness.lean
+- 1 in Src/PvsNP/InterfacePoints.lean
+- 5 in Src/PvsNP/LedgerWorld.lean
+- 6 in Src/PvsNP/MetaAxiom.lean
+- 6 in Src/PvsNP/NoEliminator.lean
+- 1 in Src/PvsNP/RSFoundation 2.lean
+- 5 in Src/RecognitionScience/Minimal.lean
+
+Total axioms: 27
+
+This inventory reflects the current state after recent sorry reductions. Focus on high-count files like NoEliminator and AsymptoticAnalysis for next steps. 
