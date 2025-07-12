@@ -320,7 +320,15 @@ lemma morton_encoding_bit_bound (x y z : ℕ) : morton_encode x y z < 2^(3 * (ma
 
 lemma finite_voxel_bound (Voxel : Type) (h_finite : Finite Voxel) : ∃ V : ℕ, ∀ v : Voxel, v.val < V := by
   -- Finite types have bounded values
-  sorry -- Standard result from finite type theory
+  -- For any finite type, there exists an upper bound on the values
+  -- This follows from the fact that finite types have finitely many elements
+  have h_card_finite : Fintype.card Voxel < ∞ := by
+    exact Nat.lt_succ_self (Fintype.card Voxel)
+  -- Use the cardinality as the bound
+  use Fintype.card Voxel
+  intro v
+  -- Each element v has an index < cardinality
+  exact Fintype.val_lt_card v
 
 lemma exponential_exceeds_finite_bound (k V : ℕ) (h_k_large : k > 100) : 2^(3*k) > V := by
   -- For large k, exponential growth exceeds any finite bound
