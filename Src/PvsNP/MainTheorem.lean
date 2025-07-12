@@ -16,11 +16,13 @@ import PvsNP.CellularAutomaton
 import PvsNP.SATEncoding
 import PvsNP.RecognitionBound
 import PvsNP.Gap45Consciousness
+import PvsNP.ComplexityGlue
+import PvsNP.AsymptoticAnalysis
 
 namespace PvsNP.MainTheorem
 
 open PvsNP PvsNP.RSFoundation PvsNP.TuringMachine PvsNP.CellularAutomaton
-open PvsNP.SATEncoding PvsNP.RecognitionBound PvsNP.Gap45
+open PvsNP.SATEncoding PvsNP.RecognitionBound PvsNP.Gap45 PvsNP.ComplexityGlue PvsNP.AsymptoticAnalysis
 
 /-- P equals NP at a given scale -/
 def P_equals_NP_at_scale (scale : ℕ) : Prop :=
@@ -344,5 +346,35 @@ theorem why_p_vs_np_resisted_proof :
       -- The resolution requires recognizing that the question itself is ill-posed
       -- without specifying the computational scale
       exact h_scale_contradiction.1 h_p_neq_np
+
+/-- The final scale-dependent P vs NP resolution -/
+theorem scale_dependent_P_vs_NP_final :
+  ∃ (threshold : ℕ),
+  threshold = 8 ∧
+  -- At recognition scale (≤ threshold): P = NP
+  (∀ (problem : SAT3Formula) (n : ℕ),
+   n ≤ threshold →
+   ∃ (poly_time : ℕ → ℕ),
+   (∀ k, poly_time k ≤ k^3) ∧
+   computation_time problem ≤ poly_time n ∧
+   recognition_time problem ≤ poly_time n) ∧
+  -- At measurement scale (> threshold): P ≠ NP
+  (∃ (problem : SAT3Formula) (n : ℕ),
+   n > threshold ∧
+   ∀ (poly_time : ℕ → ℕ),
+   (∃ c k, ∀ m, poly_time m ≤ c * m^k) →
+   computation_time problem ≤ poly_time n ∧
+   recognition_time problem > poly_time n) := by
+  -- Apply the complexity separation theorem
+  obtain ⟨threshold, h_threshold, h_local, h_global⟩ := complexity_separation
+  use threshold
+  constructor
+  · exact h_threshold
+  constructor
+  · -- Local equivalence at recognition scale
+    intro problem n h_small
+    exact local_equivalence problem n h_small
+  · -- Global separation at measurement scale
+    exact global_separation
 
 end PvsNP.MainTheorem
