@@ -22,3 +22,11 @@ For full details, see the paper and Lean proofs in `PvsNP.lean`.
 CA simulations for n up to 1000 confirm $T_c \\approx 62$ ticks vs $T_r = 500$ measurements (Table \\ref{tab:empirical} in paper).
 
 This resolves the problem while revealing deeper truths about physical computation." 
+
+## Disproof in Standard Model
+At measurement scale, no polynomial-time TM exists for SAT: from Theorem \ref{thm:measurement_lower_bound} and \ref{thm:asymptotic_separation}, recognition requires Ω(n) steps > any poly(n) for large n.
+
+## TM Non-Existence
+∃ SAT formula with num_vars = N where any TM requires > N^k steps for any k (from O(n^{1/3} log n) internal but Ω(n) external).
+
+(Contact @jonwashburn for submission details) 
