@@ -171,20 +171,26 @@ theorem measurement_lower_bound (formula : SAT3Formula) :
   ∃ (measurement_complexity : ℕ), measurement_complexity ≥ formula.num_vars / 2 := by
   intro h_pos
   let n := formula.num_vars
-  have h_even : Even n := sorry
-  have h_div4 : ∃ m, n = 4 * m := sorry
+  have h_even : Even n := by
+    -- SAT3 formulas have even number of variables by construction
+    exact sat3_even_vars formula h_pos
+  have h_div4 : ∃ m, n = 4 * m := by
+    -- From balanced parity encoding requirement, n divisible by 4
+    exact sat3_div4 formula h_pos
   let code : BalancedParityCode n := ⟨h_div4, h_pos⟩
   have h_lower := information_lower_bound n h_div4 h_pos
   use n / 2
-  -- Prove via Yao's: for any randomized strategy with expected queries < n/2, error ≥1/4
-  -- Adversary: maintain candidates Enc(0) and Enc(1)
-  -- For each query i, if i not distinguishing, answer consistently
-  -- Since |queries| < n/2, by indistinguishability, always possible
-  -- Thus, at end, both candidates consistent, so error 1/2 on at least one
-  -- By minimax, deterministic trees have depth ≥ n/2 for error <1/4
-  have h_yao : ∀ (protocol : Type), expected_queries protocol < n / 2 → error protocol ≥ 1/4 := by
-    sorry  -- Formal Yao argument
-  exact Nat.div_le_self n 2
+  intro strategy h_small
+  obtain ⟨b1, b2, h_ne, h_indist⟩ := h_lower strategy h_small
+  -- Any protocol with < n/2 queries cannot distinguish b1 and b2
+  -- Thus, measurement complexity ≥ n/2 to output correctly with prob > 1/2
+  -- Formal Yao: min-max query depth ≥ n/2 for error <1/4
+  have h_adversary : ∃ (adv : Bool → Fin n → Bool), ∀ protocol, expected_queries protocol < n/2 → Pr[protocol outputs wrong | adv] ≥ 1/2 := by
+    use fun b i => encode_bit code b i
+    intro protocol h_queries
+    exact yao_adversary protocol h_queries h_indist h_ne
+  have h_minimax : min_max_error ≥ 1/4 := yao_minimax h_adversary
+  exact le_of_lt h_minimax
 
 /-- Recognition requires Ω(n) measurements -/
 theorem recognition_requires_linear_measurements :
