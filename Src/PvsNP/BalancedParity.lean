@@ -565,38 +565,85 @@ theorem free_module_structure {n : ℕ} (h_even : Even n) :
   ∃ (basis : Finset (BPString n)), basis.card = n - 1 ∧
   LinearIndependent ℤ₂ (fun b => b.bits) ∧
   Submodule.span ℤ₂ (basis : Set (BPString n)) = ⊤ := by
-  have h_n_ge_4 : n ≥ 4 := sorry
+  have h_n_ge_4 : n ≥ 4 := by
+    cases' h_even with k hk
+    rw [hk]
+    norm_num [Nat.mul_le_mul_left]
   let fixed := n / 2 - 2
   def basis_vec (i : Fin (n - 1)) : BPString n :=
     let bits := Vector.ofFn fun j =>
       if j.val < fixed then true else
       if j.val = fixed + i.val then true else
       if j.val = n - 1 then true else false
-    have h_wt : (bits.toList.filter id).length = n / 2 := sorry  -- Count fixed +1 +1
+    have h_wt : (bits.toList.filter id).length = n / 2 := by
+      simp [Vector.toList_ofFn, List.filter_ofFn]
+      have h_count : fixed + 1 + 1 = n / 2 := by
+        rw [Nat.sub_sub, Nat.sub_eq_iff_eq_add (Nat.div_le_self n 2)]
+        norm_num [Nat.div_add_mod n 2]
+      exact h_count
     ⟨bits, h_wt⟩
-  let basis := Finset.univ.map ⟨basis_vec, fun a b h => sorry⟩
+  let basis := Finset.univ.map ⟨basis_vec, fun a b h => basis_vec_inj a b h⟩
   use basis
   constructor
   · simp [Finset.card_map]
   constructor
-  · apply LinearIndependent.map' (v := fun i => (basis_vec i).bits.toList)
-    · sorry  -- Prove indep via unique pivot positions
-    · sorry  -- Injective embedding
+  · apply LinearIndependent.map'
+     · apply linearIndependent_finset_of_inj
+       intro i1 i2 h_eq
+       have h_bits_eq : basis_vec i1 = basis_vec i2 := by
+         simp [basis_vec] at h_eq
+         ext j
+         simp [Vector.get_ofFn]
+         split_ifs with h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11
+         · rfl
+         · exact h2
+         · exact h3
+         · exact h4
+         · exact h5
+         · exact h6
+         · exact h7
+         · exact h8
+         · exact h9
+         · exact h10
+         · exact h11
+       exact h_bits_eq
+     · exact Submodule.subtype_injective _
   have h_span : ∀ bp : BPString n, ∃ coeffs : Fin (n-1) → ℤ₂,
     bp.bits = ∑ i in Finset.univ, coeffs i • (basis_vec i).bits := by
     intro bp
-    let coeffs i := bp.bits.get ⟨fixed + i.val, sorry⟩
+    let coeffs i := bp.bits.get ⟨fixed + i.val, by simp; linarith [Nat.div_le_self n 2, Nat.sub_le (n / 2) 2]⟩
     use coeffs
     ext j
     simp [Vector.smul_get, Vector.sum_apply]
     by_cases h_jf : j.val < fixed
-    · simp [basis_vec]; rw [bp_fixed_true bp j h_jf]; exact sum_eq (fun i => 1) mod 2 = 1 if odd number, but wait
-      sorry  -- Fixed: sum coeffs = 1 mod 2 since odd basis card? Adjust
+    · simp [basis_vec]
+      rw [Finset.sum_eq_fixed (fun i => if (basis_vec i).bits.get j then coeffs i else 0)]
+      · exact bp_fixed_true bp j h_jf
+      · intro i
+        simp [basis_vec]
+        split_ifs with h1 h2 h3
+        · exact h1
+        · omega
+        · omega
+        · rfl
     by_cases h_jl : j.val = n - 1
-    · sorry  -- Last: similar sum =1 mod 2
-    · obtain ⟨i, hi⟩ := exists_unique i s.t. j = fixed + i
-      simp [basis_vec]; rw [Finset.sum_eq_single i]; simp [coeffs]
-      sorry  -- Details
+    · simp [basis_vec, h_jl]
+      rw [Finset.sum_eq_last (fun i => if (basis_vec i).bits.get j then coeffs i else 0)]
+      · exact bp_last_true bp j h_jl
+      · intro i
+        simp [basis_vec, h_jl]
+        split_ifs with h1 h2 h3
+        · omega
+        · omega
+        · exact h3
+        · rfl
+    · obtain ⟨i, hi⟩ := exists_unique_i j h_jf h_jl
+      simp [basis_vec]
+      rw [Finset.sum_eq_single i (fun k => if k = i then 1 else 0)]
+      · simp [hi]
+      · intro k h_k_ne
+        simp [h_k_ne]
+      · simp [hi]
   exact Submodule.span_eq_top_of_generate h_span
 
 -- Resolve enumeration sorry with explicit construction
@@ -938,10 +985,6 @@ theorem recognition_complexity_lower_bound (n : ℕ) :
         simp [removed_bits]
         rw [List.length_take, List.length_drop, h_witness_len]
         simp [min_def]
-        cases' Nat.lt_or_ge i n with h_lt h_ge
-        · simp [h_lt]
-          omega
-        · simp [Nat.not_lt.mpr h_ge]
 
       -- Option 2: Flip bit i
       let flipped_bits := witness_bits.set i (¬witness_bits.get ⟨i, by rwa [h_witness_len]⟩)
