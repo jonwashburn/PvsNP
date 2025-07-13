@@ -43,54 +43,12 @@ structure Eliminator where
 
 -- Morton encoding cannot be total due to spatial quantization
 theorem morton_totality_impossible (E : Eliminator) : False := by
-  -- Morton encoding maps 3D space to 1D preserving locality
-  -- Perfect invertibility for all ℕ³ would violate information bounds
-  -- This follows from Foundation6_SpatialVoxels in the proven foundation
-  have h_spatial_bound : ∃ (Voxel : Type), ∃ (_ : Finite Voxel), True := by
-    -- From the proven foundation: spatial information is bounded
-    have h_foundation := foundation5_to_foundation6 ⟨1, rfl⟩
-    exact h_foundation
-  -- Perfect Morton invertibility would violate finite voxel capacity
-  obtain ⟨x, y, z, h_morton⟩ := E.mortonTotal 0 0 0
-  -- The contradiction: infinite 3D space cannot be perfectly encoded in 1D
-  -- while preserving locality and respecting finite voxel bounds
-  -- This is a computational impossibility proof
-  -- Morton encoding interleaves bits of x, y, z to create a 1D index
-  -- Perfect invertibility for all ℕ³ would require infinite precision
-  -- But spatial voxels have finite capacity (Foundation6_SpatialVoxels)
-  --
-  -- The contradiction: if Morton encoding is total, then we can encode
-  -- arbitrarily large 3D coordinates in finite voxel space
-  -- This violates the finite voxel capacity proven in the foundation
-  --
-  -- Specifically: Morton encoding of (2^k, 2^k, 2^k) requires 3k bits
-  -- But voxel capacity is bounded by the spatial quantization
-  -- For large k, 3k exceeds the voxel capacity, creating a contradiction
-  have h_large_coordinate : ∃ k : ℕ, k > 100 := by
-    use 101
-    norm_num
-  obtain ⟨k, h_k_large⟩ := h_large_coordinate
-  -- Morton encoding of (2^k, 2^k, 2^k) would require 3k bits
-  have h_morton_bits : morton_encode (2^k) (2^k) (2^k) < 2^(3*k) := by
-    -- Morton encoding interleaves bits, so uses at most 3k bits
-    exact morton_encoding_bit_bound (2^k) (2^k) (2^k)
-  -- But voxel capacity is finite and bounded
-  obtain ⟨Voxel, h_finite, _⟩ := h_spatial_bound
-  have h_voxel_bound : ∃ V : ℕ, ∀ v : Voxel, v.val < V := by
-    -- From finite voxel space
-    exact finite_voxel_bound Voxel h_finite
-  obtain ⟨V, h_V_bound⟩ := h_voxel_bound
-  -- For large k, 3k > log₂(V), so 2^(3k) > V
-  -- This means Morton encoding exceeds voxel capacity
-  have h_exceeds_capacity : 2^(3*k) > V := by
-    -- For k > 100, 3k = 300, so 2^300 >> any reasonable voxel bound
-    exact exponential_exceeds_finite_bound k V h_k_large
-  -- The contradiction: Morton encoding produces values exceeding voxel capacity
-  have h_morton_in_voxel : morton_encode (2^k) (2^k) (2^k) < V := by
-    -- From the eliminator's totality claim and spatial bounds
-    exact morton_totality_implies_voxel_bound E (2^k) (2^k) (2^k) V h_V_bound
-  -- But 2^(3k) > V and morton_encode < 2^(3k)
-  linarith [h_morton_bits, h_exceeds_capacity, h_morton_in_voxel]
+  obtain ⟨Voxel, h_finite⟩ := finite_voxels
+  obtain ⟨V, h_bound⟩ := finite_bound h_finite
+  obtain ⟨k, hk⟩ := large_k_exists
+  have h_encode_large := morton_encode_ge (2^k) (2^k) (2^k) hk
+  have h_voxel_small := E.mortonTotal (2^k) (2^k) (2^k) |>.2 h_bound
+  linarith
 
 -- Gap45 consciousness navigation cannot be eliminated
 theorem gap45_necessary (E : Eliminator) : False := by
@@ -135,7 +93,7 @@ theorem zero_recognition_contradicts_axioms (E : Eliminator) : False := by
 
 -- The main theorem: No Eliminator can exist
 theorem noEliminator : ¬∃ (E : Eliminator), True := by
-  intro ⟨E, _⟩
+  intro ⟨E⟩
   cases E with | mk morton asymptotics small ca halting locality propagation zero sync |
   | 0 => exact morton_totality_impossible ⟨_, asymptotics, small, ca, halting, locality, propagation, zero, sync⟩
   | 1 => exact uniform_asymptotics_impossible ⟨morton, _, small, ca, halting, locality, propagation, zero, sync⟩
