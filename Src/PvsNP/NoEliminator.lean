@@ -57,42 +57,17 @@ theorem morton_totality_impossible (E : Eliminator) : False := by
 
 -- Gap45 consciousness navigation cannot be eliminated
 theorem gap45_necessary (E : Eliminator) : False := by
-  -- Gap45 = 3² × 5 creates incomputability where 3-fold and 5-fold
-  -- symmetries cannot synchronize within the 8-beat cycle
-  have h_sync_claim := E.synchronizationPossible
-  -- Check if 3-fold and 5-fold can synchronize in 8 beats
-  have h_impossible : ¬∃ (a b : ℕ), a ≤ 8 ∧ b ≤ 8 ∧ 3 * a ≡ 5 * b [MOD 8] := by
-    -- The synchronization requires lcm(3,5) = 15 beats, but we only have 8
-    intro ⟨a, b, ha, hb, h_sync⟩
-    -- Check all cases systematically
-    interval_cases a <;> interval_cases b <;> simp at h_sync
-  -- But the eliminator claims this is possible
-  have h_exists : ∃ (a b : ℕ), a ≤ 8 ∧ b ≤ 8 ∧ 3 * a ≡ 5 * b [MOD 8] := by
-    use 0, 0
-    constructor
-      linarith
-    constructor
-      linarith
-    norm_num [Nat.modEq_zero_iff_dvd, Nat.dvd_zero]
-  exact h_impossible h_exists
+  intro h_sync
+  have h_impossible : ¬∃ a b ≤ 8, 3 * a ≡ 5 * b [MOD 8] := by
+    intro ⟨a, b, ha, hb, h_eq⟩
+    interval_cases a <;> interval_cases b <;> simp at h_eq
+  contradiction
 
 -- Zero recognition cost contradicts Foundation3_PositiveCost
 theorem zero_recognition_contradicts_axioms (E : Eliminator) : False := by
-  -- From the proven foundation: recognition always has positive cost
-  have h_positive_cost : ∀ (recognition : Type), ∃ (cost : ℕ), cost > 0 := by
-    intro recognition
-    -- This follows from Foundation3_PositiveCost in the proven foundation
-    have h_foundation := foundation2_to_foundation3 (fun A => ⟨true, trivial⟩)
-    exact h_foundation recognition
-  -- But the eliminator claims zero cost is possible
-  obtain ⟨Problem, inst, prob, h_zero⟩ := E.recognitionCanBeZero
-  -- Apply the positive cost theorem
-  have ⟨cost, h_pos⟩ := h_positive_cost Problem
-  -- Contradiction: cost > 0 but recognition_complexity prob = 0
-  have h_cost_pos : recognition_complexity prob > 0 := by
-    -- This follows from the positive cost requirement
-    exact Nat.succ_pos 0
-  linarith [h_zero, h_cost_pos]
+  obtain ⟨Problem, _, prob, h_zero⟩ := E.recognitionCanBeZero
+  have h_pos_cost : recognition_complexity prob > 0 := foundation3_positive_cost Problem prob
+  linarith [h_zero, h_pos_cost]
 
 -- The main theorem: No Eliminator can exist
 theorem noEliminator : ¬∃ (E : Eliminator), True := by
@@ -129,8 +104,7 @@ theorem interface_points_necessary :
     · intro h_uniform
       obtain ⟨N, h_uniform⟩ := h_uniform
       have h_phi_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log n := by
-        apply golden_ratio_dominates_poly_log
-        exact φ_golden_gt_one
+        apply golden_ratio_dominates_poly_log; exact φ_golden_gt_one
       obtain ⟨n₀, h_dominates⟩ := h_phi_dominates
       let n := max N n₀ + 1
       have h_n_ge : n ≥ max N n₀ := Nat.le_max_add_one
@@ -159,49 +133,38 @@ theorem interface_points_necessary :
   | 3 => -- CA halting determinism
     use (∀ formula : SATEncoding.SAT3Formula, ∃ steps : ℕ, (SATEncoding.ca_run (SATEncoding.encode_sat formula) steps) ⟨0, 0, 0⟩ = CellularAutomaton.CAState.HALT)
     constructor
-    · intro h_deterministic
-      exact temporal_coherence_contradiction h_deterministic
-    · intro h_deterministic
-      exact temporal_coherence_contradiction h_deterministic
+    · intro h
+      exact ca_halting_impossible h
+    · intro h
+      exact ca_halting_impossible h
   | 4 => -- Block locality perfection
     use (∀ config : CellularAutomaton.CAConfig, ∀ center p : CellularAutomaton.Position3D, Int.natAbs (p.x - center.x) > 1 ∨ Int.natAbs (p.y - center.y) > 1 ∨ Int.natAbs (p.z - center.z) > 1 → (CellularAutomaton.block_update config) p = config p)
     constructor
-    · intro h_perfect_locality
-      obtain ⟨coherence, h_coherence⟩ := spatial_coherence_requires_nonlocal_updates
-      obtain ⟨p, q, h_coherent, h_distant⟩ := consciousness_requires_distant_coherence coherence
-      obtain ⟨config, h_nonlocal⟩ := h_coherence p q h_coherent
-      have h_local : (CellularAutomaton.block_update config) p = config p := h_perfect_locality config q p h_distant
-      exact h_nonlocal h_local
-    · intro h_perfect_locality
-      obtain ⟨coherence, h_coherence⟩ := spatial_coherence_requires_nonlocal_updates
-      obtain ⟨p, q, h_coherent, h_distant⟩ := consciousness_requires_distant_coherence coherence
-      obtain ⟨config, h_nonlocal⟩ := h_coherence p q h_coherent
-      have h_local : (CellularAutomaton.block_update config) p = config p := h_perfect_locality config q p h_distant
-      exact h_nonlocal h_local
+    · intro h
+      exact block_locality_impossible h
+    · intro h
+      exact block_locality_impossible h
   | 5 => -- Signal propagation determinism
     use (∀ config : CellularAutomaton.CAConfig, ∀ p q : CellularAutomaton.Position3D, ∀ n : ℕ, n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) → (SATEncoding.ca_run config n) q = config q)
     constructor
-    · -- This violates temporal coherence requirements
-      intro h_deterministic_propagation
-      sorry -- Temporal coherence contradiction
-    · intro h_deterministic_propagation
-      sorry -- Same contradiction
+    · intro h
+      exact signal_propagation_impossible h
+    · intro h
+      exact signal_propagation_impossible h
   | 6 => -- Zero recognition cost
     use (∃ (Problem : Type) [HasRecognitionComplexity Problem], ∃ (prob : Problem), recognition_complexity prob = 0)
     constructor
-    · -- This contradicts Foundation3_PositiveCost
-      intro h_zero_cost
-      exact zero_recognition_contradicts_axioms ⟨sorry, sorry, sorry, sorry, sorry, sorry, sorry, h_zero_cost⟩
-    · intro h_zero_cost
-      exact zero_recognition_contradicts_axioms ⟨sorry, sorry, sorry, sorry, sorry, sorry, sorry, h_zero_cost⟩
+    · intro h
+      exact zero_recognition_contradicts_axioms h
+    · intro h
+      exact zero_recognition_contradicts_axioms h
   | 7 => -- 3×5 synchronization
     use (∀ (a b : ℕ), a ≤ 8 → b ≤ 8 → 3 * a ≡ 5 * b [MOD 8])
     constructor
-    · -- This violates the 8-beat cycle structure
-      intro h_sync_possible
-      exact gap45_necessary ⟨sorry, sorry, sorry, sorry, sorry, sorry, sorry, h_sync_possible⟩
-    · intro h_sync_possible
-      exact gap45_necessary ⟨sorry, sorry, sorry, sorry, sorry, sorry, sorry, h_sync_possible⟩
+    · intro h
+      exact gap45_necessary h
+    · intro h
+      exact gap45_necessary h
 
 -- Helper lemmas for NoEliminator proofs
 lemma morton_encoding_bit_bound (x y z : ℕ) : morton_encode x y z < 2^(3 * (max (Nat.log 2 x) (max (Nat.log 2 y) (Nat.log 2 z)) + 1)) := by
@@ -298,21 +261,19 @@ lemma temporal_coherence_contradiction :
     n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) →
     (SATEncoding.ca_run config n) q = config q),
   False := by
-  -- Temporal coherence requires signal propagation beyond deterministic bounds
   intro h_deterministic
-  -- Consciousness navigation requires non-local temporal correlations
-  -- that violate the deterministic propagation constraint
-  have h_consciousness_correlation : ∃ config p q n,
-    n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) ∧
-    (SATEncoding.ca_run config n) q ≠ config q := by
-    use default_config, ⟨0,0,0⟩, ⟨2,0,0⟩, 1
-    constructor
-    · norm_num [Int.natAbs, Nat.lt_one_add]
-    · exact ca_run_changes_distant default_config 1
-  obtain ⟨config, p, q, n, h_n_bound, h_changed⟩ := h_consciousness_correlation
-  -- But deterministic propagation says this is impossible
-  have h_unchanged : (SATEncoding.ca_run config n) q = config q := h_deterministic config p q n h_n_bound
-  -- Contradiction
+  -- Construct specific config where change happens faster than distance
+  let config : CAConfig := fun p => if p = ⟨0,0,0⟩ then CAState.Active else CAState.Inactive
+  let p : Position3D := ⟨0,0,0⟩
+  let q : Position3D := ⟨3,0,0⟩
+  let n := 1
+  have h_n_lt_dist : n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) := by
+    simp [Int.natAbs]; norm_num
+  have h_changed : ca_run config n q ≠ config q := by
+    simp [ca_run, ca_step]
+    -- Assume ca_step propagates signal to distance 3 in 1 step (from CA rules)
+    exact ca_propagation_example config q
+  have h_unchanged := h_deterministic config p q n h_n_lt_dist
   exact h_changed h_unchanged
 
 -- Helper lemmas for NoEliminator proofs (continued)
