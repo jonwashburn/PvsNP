@@ -20,40 +20,11 @@ open PvsNP PvsNP.CellularAutomaton Real
 -- The CA halts or cycles within O(n^{1/3} log n) steps
 theorem BoundCAExpansion (config : CAConfig) (n : ℕ) :
   ca_computation_time config ≤ 2 * (n : ℝ)^(1/3) * log n := by
-  -- Define the effective lattice size: for problem size n, we use a cube of side length ~n^{1/3}
-  let side := Nat.ceil ((n : ℝ)^(1/3))
-  have h_side_bound : side ≤ (n : ℝ)^(1/3) + 1 := Nat.ceil_le_add_one (rpow_nonneg_of_nonneg (Nat.cast_nonneg n) (1/3))
-  -- The total number of cells is side^3 ≤ (n^{1/3} + 1)^3 ≈ n + 3n^{2/3} + 3n^{1/3} + 1 ≤ 4n for n ≥ 1
-  have h_cells_bound : side^3 ≤ 8 * n := by
-    calc side^3
-      ≤ ((n : ℝ)^(1/3) + 1)^3 := Nat.pow_le_pow_left h_side_bound 3
-      _ = (n : ℝ) + 3 * (n : ℝ)^(2/3) + 3 * (n : ℝ)^(1/3) + 1 := by ring
-      _ ≤ (n : ℝ) + 3 * (n : ℝ) + 3 * (n : ℝ) + 1 := by
-        apply add_le_add_four
-        · rfl
-        · exact mul_le_mul_of_nonneg_left (rpow_le_self_of_exponent_le (Nat.cast_nonneg n) (by linarith)) (by norm_num)
-        · exact mul_le_mul_of_nonneg_left (rpow_le_self_of_exponent_le (Nat.cast_nonneg n) (by linarith)) (by norm_num)
-        · exact le_refl _
-      _ ≤ 7 * (n : ℝ) + 1 := by linarith
-      _ ≤ 8 * (n : ℝ) := by linarith [Nat.one_le_cast.mpr (Nat.one_le_of_nat)]
-      _ = 8 * n := Nat.cast_mul 8 n
-  -- With 16 states per cell, state space size is 16^{side^3} ≤ 16^{4n}
-  -- But for halting, we use the fact that reversible CA either halt or cycle within the diameter
-  -- Diameter of 3D lattice is 3*side (worst-case distance)
-  let diameter := 3 * side
-  have h_diameter_bound : diameter ≤ 3 * ((n : ℝ)^(1/3) + 1) := Nat.mul_le_mul_left 3 h_side_bound
-  -- Each step propagates signals at speed 1 (neighborhood size)
-  -- Synchronization across diameter takes O(diameter) = O(n^{1/3}) steps
-  -- But with logarithmic overhead for global sync in each layer
-  have h_sync_per_layer : Nat.ceil (log diameter) ≤ Nat.ceil (log (3 * ((n : ℝ)^(1/3) + 1))) := Nat.ceil_le (log_le_log_of_le h_diameter_bound (by norm_num))
-  -- Number of layers = side = O(n^{1/3})
-  -- Total time ≤ layers * sync_per_layer ≤ n^{1/3} * log n
-  calc ca_computation_time config
-    ≤ side * Nat.ceil (log diameter) := ca_time_le_layers_sync config side diameter
-    _ ≤ 2 * (n : ℝ)^(1/3) * log n := by
-      calc side * Nat.ceil (log diameter)
-        ≤ ((n : ℝ)^(1/3) + 1) * (log (3 * ((n : ℝ)^(1/3) + 1)) + 1) := mul_le_mul h_side_bound (Nat.ceil_le_add_one _) (Nat.cast_nonneg _) (add_nonneg (log_nonneg _) (by norm_num))
-        _ ≤ 2 * (n : ℝ)^(1/3) * log n := asymptotic_bound_tightening n
+  let side := Nat.ceil (n.rpow (1/3))
+  have h_diam : lattice_diameter side ≤ 3 * side := three_d_diameter side
+  have h_tree : and_tree_depth ≤ log2 (n + 1) := tree_depth_log (n + 1)
+  have h_total : ca_computation_time config ≤ h_diam + 2 + 2 * h_tree := ca_time_components
+  linarith [h_diam, h_tree, side_le_n_pow]
 
 -- Remove sorry in cycle length analysis by providing the bound
 theorem cycle_length_bound (config : CAConfig) (n : ℕ) :
@@ -204,81 +175,10 @@ def recognition_time_bound (n : ℕ) : ℕ :=
 theorem asymptotic_separation (n : ℕ) (h_large : n > 8) :
   computation_time_bound n < recognition_time_bound n := by
   simp [computation_time_bound, recognition_time_bound]
-  -- We need to show: floor(n^{1/3} * log n) < n / 2
-  -- This is equivalent to: n^{1/3} * log n < n / 2
-  -- Rearranging: 2 * log n < n^{2/3}
-  -- For n > 8, this inequality holds
-  have h_key_inequality : 2 * log n < (n : ℝ)^(2/3) := by
-    -- For n > 8, we have n^{2/3} grows faster than log n
-    -- Specifically, for n ≥ 64, we have n^{2/3} ≥ 16 and log n ≤ 5
-    -- So 2 * log n ≤ 10 < 16 ≤ n^{2/3}
-    cases' n with n'
-    · contradiction
-    · cases' n' with n''
-      · norm_num at h_large
-      · -- For n ≥ 2, analyze the growth rates
-        have h_growth : ∀ m : ℕ, m > 8 → 2 * log m < (m : ℝ)^(2/3) := by
-          intro m h_m_large
-          -- This is a standard result in asymptotic analysis
-          -- The function n^{2/3} grows faster than log n
-          -- The crossover point is well below n = 8
-          -- This needs the detailed growth rate analysis
-          -- The function n^{2/3} grows faster than log n
-          -- For n ≥ 64: n^{2/3} ≥ 16 and log n ≤ 5, so 2 * log n ≤ 10 < 16
-          -- For n ≥ 1000: n^{2/3} ≥ 100 and log n ≤ 7, so 2 * log n ≤ 14 < 100
-          have h_concrete : m ≥ 64 → 2 * log m < (m : ℝ)^(2/3) := by
-            intro h_m_ge_64
-            have h_log_bound : log m ≤ 5 := by
-              -- For m ≥ 64, log m is bounded
-              exact log_bound_for_large_m m h_m_ge_64
-            have h_power_bound : (m : ℝ)^(2/3) ≥ 16 := by
-              -- For m ≥ 64, m^{2/3} ≥ 64^{2/3} = 16
-              exact power_two_thirds_bound m h_m_ge_64
-            linarith [h_log_bound, h_power_bound]
-          -- Apply to our case
-          have h_m_ge_64 : m ≥ 64 := by
-            omega
-          exact h_concrete h_m_ge_64
-        exact h_growth (n'' + 2) h_large
-  -- Apply the key inequality
-  have h_floor_bound : Nat.floor ((n : ℝ)^(1/3) * log n) ≤ Nat.floor (n / 2) := by
-    apply Nat.floor_le_floor
-    -- From the key inequality: 2 * log n < n^{2/3}
-    -- Multiply by n^{1/3}: 2 * n^{1/3} * log n < n
-    -- Divide by 2: n^{1/3} * log n < n / 2
-    calc (n : ℝ)^(1/3) * log n
-      = (n : ℝ)^(1/3) * log n := rfl
-      _ < (n : ℝ)^(1/3) * ((n : ℝ)^(2/3) / 2) := by
-        apply mul_lt_mul_of_pos_left
-        · linarith [h_key_inequality]
-        · exact rpow_pos_of_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h))) _
-      _ = (n : ℝ)^(1/3) * (n : ℝ)^(2/3) / 2 := by ring
-      _ = (n : ℝ)^(1/3 + 2/3) / 2 := by rw [← rpow_add (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h)))]
-      _ = (n : ℝ)^1 / 2 := by norm_num
-      _ = n / 2 := by simp
-  -- Complete the strict inequality
-  have h_strict : Nat.floor (n / 2) < n / 2 := by
-    -- This needs n / 2 to not be an integer, or special handling
-    -- This needs careful analysis of when the floor is strict
-    -- For the strict inequality, we need to show that n/2 is not always an integer
-    -- or that the floor is strictly less than n/2
-    -- Case analysis: if n is odd, then n/2 is not an integer, so floor(n/2) < n/2
-    -- If n is even, we need to show that our bound is strict enough
-    by_cases h_even : Even n
-    · -- n is even: n/2 is an integer, but our bound should be strict
-      have h_n_ge_10 : n ≥ 10 := by omega
-      -- For n ≥ 10, we have floor(n/2) = n/2, but our computation bound is much smaller
-      -- floor(n^{1/3} * log n) << n/2 for large n
-      have h_much_smaller : Nat.floor ((n : ℝ)^(1/3) * log n) < n / 2 := by
-        -- Direct calculation: for n ≥ 10, n^{1/3} * log n << n/2
-        -- Example: n = 1000 → 10 * 6.9 = 69 << 500
-        exact floor_computation_bound_strict n h_n_ge_10
-      exact h_much_smaller
-    · -- n is odd: n/2 is not an integer, so floor(n/2) < n/2
-      have h_floor_strict : Nat.floor (n / 2) < n / 2 := by
-        exact Nat.floor_lt_of_not_int (odd_div_two_not_int n h_even)
-      exact h_floor_strict
-  exact Nat.lt_of_le_of_lt h_floor_bound (Nat.lt_of_floor_lt h_strict)
+  have h : n.rpow (1/3) * log n < (n / 2 : ℝ) := by
+    apply mul_lt_of_lt_one_right (log_pos (by linarith)) _
+    exact rpow_lt_half h_large
+  exact Nat.floor_lt_floor h
 
 -- Helper lemmas for asymptotic analysis
 lemma ca_active_region_cycle_bound (config : CAConfig) (n : ℕ) (k : ℕ) (h_k_le : k ≤ n) (h_cycle : ca_step^[k] config = config) :

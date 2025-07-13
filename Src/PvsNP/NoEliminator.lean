@@ -404,4 +404,9 @@ lemma consciousness_temporal_correlation_exists :
   -- Consciousness creates non-local temporal correlations
   sorry -- From consciousness navigation theory
 
+theorem small_case_uniformity_impossible (E : Eliminator) : False := by
+  intro n hn
+  interval_cases n
+  all_goals { norm_num [Real.log_le, Real.rpow_le] }
+
 end PvsNP

@@ -255,33 +255,15 @@ theorem complexity_separation :
   constructor
   · rfl
   constructor
-  · -- At recognition scale: both bounds are polynomial
-    intro n h_small
-    obtain ⟨poly, h_poly_bound, h_comp_bound, h_rec_bound⟩ := local_equivalence ⟨n, []⟩ n h_small
-    use poly
-    constructor
-    · exact h_comp_bound
-    · exact h_rec_bound
-  · -- At measurement scale: computation polynomial, recognition superpolynomial
-    intro n h_large poly h_comp_poly
-    obtain ⟨problem, m, h_m_large, h_separation⟩ := global_separation
-    -- Apply the separation result
-    have h_bound_relation : m = n := by
-      -- Connect the specific problem size to the general bound
-      -- This needs careful size analysis
-    -- The separation result uses m = 1000, and we want to show this for general n > 8
-    -- The key insight is that the separation holds for any n > 8
-    -- We use m = 1000 as a concrete example, but the result scales
-    -- For the general case, we need n = m to apply the specific separation
-    have h_size_equivalence : n = m := by
-      -- In the context of complexity separation, we can choose the problem size
-      -- to match the input size parameter
-      -- This is valid because the separation theorem holds for any large enough n
-      exact size_parameter_equivalence n m h_large h_m_large
-    exact h_size_equivalence
-    rw [← h_bound_relation] at h_separation
-    obtain ⟨h_comp_ok, h_rec_large⟩ := h_separation poly ⟨1, 1, fun _ => le_refl _⟩
-    exact h_rec_large
+  · intro n hn
+    use (fun k => k^3)
+    split
+    all_goals { norm_num [computation_time_bound, recognition_time_bound] }
+  · intro n hn poly h_comp
+    let formula := {num_vars := n, clauses := []}
+    have h_Tr : recognition_time_bound n = n / 2 := rfl
+    have h_Tc_lt_poly : computation_time_bound n < poly n := lt_of_le_of_lt h_comp (poly_gt_subpoly poly n hn)
+    linarith [Nat.div_le_self n 2]
 
 -- Helper lemmas for complexity analysis
 lemma sat_encoding_vars_bound (problem : SAT3Formula) (n : ℕ) : problem.num_vars ≤ n := by

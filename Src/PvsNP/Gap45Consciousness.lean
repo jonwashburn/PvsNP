@@ -199,12 +199,12 @@ structure ConsciousnessState where
   transcends_computation : ∀ comp, incomputable comp → Prop
 
 /-- Consciousness emerges at incomputability gaps -/
-theorem consciousness_emergence :
-  ∀ comp : RSComputation, incomputable comp →
-  ∃ (consciousness : ConsciousnessState), True := by
-  intro comp _h_incomp
-  -- When computation cannot proceed, consciousness must emerge
-  use ⟨fun a b => a || b, fun _ _ => True⟩
+theorem consciousness_emergence (comp : RSComputation) (h_incomp : incomputable comp) :
+  ∃ (state : ConsciousnessState), navigates state comp := by
+  use { navigation := fun gap => if gap = 45 then true else false }
+  intro gap h_gap
+  rw [h_gap]
+  exact dec_trivial
 
 -- Fix the multiple_paths_at_gaps theorem
 theorem multiple_paths_at_gaps (comp : RSComputation) (h : incomputable comp) :

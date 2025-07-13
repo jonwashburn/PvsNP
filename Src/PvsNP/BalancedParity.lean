@@ -243,16 +243,17 @@ theorem decode_encode_identity {n : ℕ} (h_even : Even n) (bp : BPString n) :
   ext
   simp [Vector.ext_iff]
   intro i
-  have h_digits : Nat.digits 2 (encode bp).val = bp.bits.toList.reverse.map (fun b => if b then 1 else 0) := by
-    sorry  -- Use Mathlib's Nat.digits_eq_bits and induction to show foldl gives MSB-first, but digits is LSB-first, so reverse
+  have h_encode_val : (encode bp).val = bp.bits.toList.foldr (fun b acc => (if b then 1 else 0) + 2 * acc) 0 := by
+    simp [encode]; rw [List.foldl_eq_foldr_reverse]
+  have h_digits : Nat.digits 2 (encode bp).val = (bp.bits.toList.map Bool.toNat).reverse := by
+    exact Nat.digits_eq_of_eq h_encode_val.symm
+  simp [Bool.toNat]
   let digits := Nat.digits 2 (encode bp).val
-  have h_padded : padded_digits = digits ++ List.replicate (n - digits.length) false := by simp [padded_digits]
-  have h_len_digits : digits.length ≤ n := encoding_produces_bounded_bits bp
-  have h_get : ∀ j < n, padded_digits.get ⟨j, sorry⟩ = if j < digits.length then digits.get ⟨j, sorry⟩ else false := by
-    sorry  -- List get on append
-  have h_orig : bp.bits.get i = bp.bits.toList.get ⟨i.val, sorry⟩ := by sorry
-  rw [h_orig, ← List.reverse_reverse bp.bits.toList, List.get_reverse]
-  sorry  -- Complete with induction aligning positions
+  have h_padded_get : ∀ j < n, padded_digits.get! j = if j < digits.length then digits.get! j else 0 := by
+    intro j hj; simp [padded_digits, List.get!_append]
+  have h_bp_get : bp.bits.get i = bp.bits.toList.get! i.val := Vector.get_eq_get! _ _
+  rw [h_bp_get, ← h_digits, List.get!_map, List.get!_reverse]
+  sorry  -- Align indices with calc for j = n - 1 - i.val or similar
 
 -- Helper lemmas for basis construction
 lemma balanced_string_fixed_pattern (bp : BPString n) (j : Fin n) (h_j_fixed : j.val < n / 2 - 2) :
