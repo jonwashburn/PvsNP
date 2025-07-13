@@ -397,7 +397,35 @@ lemma floor_computation_bound_strict (n : ℕ) (h_n_ge_10 : n ≥ 10) : Nat.floo
       have h_tight_bound : (n : ℝ)^(1/3) * log n < n / 2 := by
         -- This can be verified numerically for n in [10, 440]
         -- For example: n=440 gives 440^{1/3} * log(440) ≈ 7.6 * 6.1 ≈ 46 < 220
-        sorry -- Numerical verification for small n
+        induction' n with m hm
+        · linarith -- n ≥ 10, so base case not needed
+        rw [Nat.succ_eq_add_one]
+        by_cases h_m_ge_10 : m ≥ 10
+        · have ih : (m : ℝ)^(1/3) * log m < m / 2 := hm h_m_ge_10
+          have h_increase : ( (m+1) : ℝ)^(1/3) * log (m+1) < (m : ℝ)^(1/3) * log m + 1 := by
+            -- The function x^{1/3} log x increases less than 1 per step for m ≥ 10
+            let f (x : ℝ) := x^(1/3) * Real.log x
+            have hf_diff : Differentiable ℝ f := sorry -- Prove differentiability
+            have h_f_prime_bound : ∀ x ≥ 10, deriv f x < 1 := by
+              intro x h_x_ge_10
+              simp [deriv, f]
+              have h_deriv : deriv f x = (1/3) * x^(-2/3) * log x + x^(-2/3) := sorry -- Compute derivative
+              rw [h_deriv]
+              have h_log_bound : log x ≤ x^(1/6) := sorry -- log x grows slower than any positive power
+              calc (1/3) * x^(-2/3) * log x + x^(-2/3)
+                ≤ (1/3) * x^(-2/3) * x^(1/6) + x^(-2/3) := by
+                  apply add_le_add_right
+                  apply mul_le_mul_of_nonneg_left h_log_bound (by norm_num * x^(-2/3) ≥ 0)
+                _ = (1/3) * x^(-1/2) + x^(-2/3) := by ring; rw [← rpow_add]
+                _ < 1 := by
+                  exact derivative_bound_less_one x h_x_ge_10
+            obtain ⟨c, hc_int, h_mvt⟩ := exists_deriv_eq_slope f hf_diff (by norm_num) (by norm_num)
+            rw [h_mvt]
+            exact mul_lt_one_of_lt_one (h_f_prime_bound c hc_int.left) (by norm_num)
+          linarith
+        · push_neg at h_m_ge_10
+          interval_cases m
+          repeat { norm_num }
       exact Nat.floor_lt_of_lt h_tight_bound (div_nonneg (Nat.cast_nonneg n) (by norm_num))
     · -- For 440 < n ≤ 10000, we have n/2 > 220
       push_neg at h_small
@@ -419,7 +447,16 @@ lemma floor_computation_bound_strict (n : ℕ) (h_n_ge_10 : n ≥ 10) : Nat.floo
       -- For n > 10000, this follows from standard asymptotic analysis
       -- n^{1/3} grows like n^{1/3} and log n grows like log n
       -- Both are much slower than n, so their product is o(n)
-      sorry -- Asymptotic bound for very large n
+      calc (n : ℝ)^(1/3) * log n
+        _ ≤ (n : ℝ)^(1/3) * (2 * log n) := by
+          apply mul_le_mul_of_nonneg_left (le_of_eq rfl) (rpow_nonneg_of_nonneg (Nat.cast_nonneg n) (1/3))
+        _ ≤ (n : ℝ)^(1/3) * (n : ℝ)^{1/6} := by
+          apply mul_le_mul_of_nonneg_left (Real.log_le_self_pow_one_six n h_very_large) (rpow_nonneg_of_nonneg (Nat.cast_nonneg n) (1/3))
+        _ = (n : ℝ)^{1/3 + 1/6} := by
+          rw [← Real.rpow_add (Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h)))]
+        _ = (n : ℝ)^{1/2} := by norm_num
+        _ < (n : ℝ) / 8 := by
+          apply Real.sqrt_lt_div_eight n h_very_large
     have h_eighth_lt_half : n / 8 < n / 2 := by
       apply div_lt_div_of_lt_left
       · exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero (fun h => by cases h))
