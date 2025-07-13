@@ -134,23 +134,58 @@ theorem axiom_A3_necessity :
 theorem axiom_A4_necessity :
   (∃ (A : Type*), Recognises A A) →
   ∃ (U : Matrix (Fin 2) (Fin 2) ℂ), U * U† = 1 := by
-  intro ⟨A, h_rec⟩
-  -- Recognition preserves information (unitary evolution)
-  sorry -- Requires matrix library for full proof
+  intro _
+  -- We can witness the 2×2 identity matrix, which is trivially unitary.
+  refine ⟨(1 : Matrix (Fin 2) (Fin 2) ℂ), ?_⟩
+  -- For matrices over a *-ring, the conjugate transpose of the identity is itself.
+  simp
 
 /-- Enhanced golden ratio emergence -/
 theorem golden_ratio_emergence :
   φ_real = (1 + Real.sqrt 5) / 2 ∧
   φ_real^2 = φ_real + 1 ∧
   φ_real > 1 := by
+  -- First identity is by definition.
   constructor
   · rfl
+  -- Second: verify φ satisfies quadratic.
   constructor
-  · field_simp [φ_real]
-    ring_nf
-    sorry -- Requires algebraic manipulation
-  · norm_num [φ_real]
-    sorry -- Requires numerical bounds
+  · have h : (1 + Real.sqrt 5) / 2 * (1 + Real.sqrt 5) / 2 = ((1 + Real.sqrt 5) / 2) + 1 := by
+      field_simp [pow_two]
+      ring_nf
+      -- Use (Real.sqrt 5)^2 = 5.
+      have : (Real.sqrt 5) ^ 2 = (5 : ℝ) := by
+        have hnonneg : (0 : ℝ) ≤ 5 := by norm_num
+        simpa using Real.sq_sqrt hnonneg
+      simp [pow_two, this] at h
+    simpa [φ_real] using h
+  -- Third: show φ>1.
+  · have : (0 : ℝ) < Real.sqrt 5 := by
+      have : (0 : ℝ) < (5 : ℝ) := by norm_num
+      have : (0 : ℝ) ≤ 5 := by linarith
+      have := Real.sqrt_pos.mpr (by norm_num : (0 : ℝ) < 5)
+      simpa using this
+    have : φ_real = (1 + Real.sqrt 5) / 2 := rfl
+    have h_num : 0 < 1 + Real.sqrt 5 := by
+      have : (0 : ℝ) < Real.sqrt 5 := by
+        have : (0 : ℝ) < 5 := by norm_num
+        exact Real.sqrt_pos.mpr this
+      linarith
+    have h_den : (0 : ℝ) < (2 : ℝ) := by norm_num
+    have : φ_real > 1 := by
+      have : (1 + Real.sqrt 5) / 2 > 1 ↔ 1 + Real.sqrt 5 > 2 := by
+        have h_den_pos : (0:ℝ) < 2 := by norm_num
+        exact div_lt_iff h_den_pos
+      have : 1 + Real.sqrt 5 > 2 := by
+        have : Real.sqrt 5 > 1 := by
+          have : (1 : ℝ)^2 = 1 := by norm_num
+          have hfive : (1:ℝ)^2 < 5 := by norm_num
+          have := Real.sqrt_lt_sqrt_iff.mp hfive
+          simpa using this
+        linarith
+      have := (div_lt_iff h_den).mpr this
+      simpa [φ_real] using this
+    simpa [φ_real] using this
 
 /-- Eight-beat closure necessity -/
 theorem eight_beat_necessity :
