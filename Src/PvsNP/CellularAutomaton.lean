@@ -118,4 +118,11 @@ def ca_recognition_time (initial : CAConfig) (n : ℕ) : ℕ :=
   -- Due to balanced-parity encoding, need to read Ω(n) voxels
   n / 2
 
+lemma mass_preservation : ∀ block, M (f block) = M block := by
+  intro block
+  rw [f]
+  have h_tensor_mass : M (T ⊗ F block) = M block := tensor_mass_preserve T F block toffoli_mass fredkin_mass
+  have h_swap_mass : M (S (T ⊗ F block)) = M (T ⊗ F block) := swap_permutes_mass
+  simp [h_tensor_mass, h_swap_mass]
+
 end PvsNP.CellularAutomaton
