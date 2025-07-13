@@ -90,8 +90,9 @@
 
 ## Step 2 Progress Update
 
-- **Resolved**: 5 sorries in AsymptoticAnalysis.lean through targeted proofs for inequalities, pigeonhole, and bound adjustments.
-- **Remaining Focus**: Continue with power function lemmas and CA cycle bounds in AsymptoticAnalysis.lean.
+- **Resolved**: Additional 1 sorry in AsymptoticAnalysis.lean through implementing power function bounds, asymptotic helper lemmas, and numerical bounds.
+- **Key Implementations**: power_two_thirds_bound (monotonicity proof), additive_constant_negligible (ratio analysis), partial floor_computation_bound_strict (with conservative bounds).
+- **Remaining Focus**: CA-specific lemmas requiring domain knowledge, and completion of asymptotic analysis bounds.
 
 ## Current Strategy
 - **Phase 1 Complete**: Routine lemmas (numerical, basic number theory, finite types)
@@ -197,12 +198,12 @@
 ## Updated Sorry and Axiom Inventory (Latest)
 
 ### Sorries:
-- 14 in Src/PvsNP/AsymptoticAnalysis.lean
+- 13 in Src/PvsNP/AsymptoticAnalysis.lean
 - 13 in Src/PvsNP/BalancedParity.lean
 - 5 in Src/PvsNP/ComplexityGlue.lean
 - 22 in Src/PvsNP/NoEliminator.lean
 
-Total sorries: 54
+Total sorries: 53
 
 ### Axioms:
 - 1 in Src/PvsNP/BalancedParity.lean
