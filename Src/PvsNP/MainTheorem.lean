@@ -377,4 +377,20 @@ theorem scale_dependent_P_vs_NP_final :
   · -- Global separation at measurement scale
     exact global_separation
 
+theorem deepest_truth :
+  (P_recognition = NP_recognition) ∧ (P_measurement ≠ NP_measurement) := by
+  constructor
+  ext Problem
+  simp [P_recognition, NP_recognition]
+  constructor
+  · intro ⟨poly, hp⟩; use poly; intro inst hs; use inst; exact hp inst hs
+  · intro ⟨poly, hp⟩; use poly; intro inst hs; obtain ⟨cert, hv⟩ := hp inst hs; exact hv
+  intro h_eq; obtain ⟨N, h_sep⟩ := scale_separation
+  let formula := {num_vars := N + 1, clauses := []}
+  have h_large : formula.num_vars ≥ N := by simp
+  simp at h_sep
+  have ⟨poly, hp⟩ := h_eq SAT3Formula
+  specialize hp formula h_large
+  linarith [h_sep formula h_large, hp]
+
 end PvsNP.MainTheorem

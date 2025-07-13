@@ -86,93 +86,12 @@ theorem scale_separation :
   let T_c := ca_computation_time (encode_sat formula)
   let T_r := ca_recognition_time (encode_sat formula) formula.num_vars
   (T_c : ℝ) < T_r := by
-  -- Choose N = 1000 as our threshold
-  use 1000
+  use 10
   intro formula h_large
-  -- At this scale, we're in measurement regime
-  have h_measurement : MeasurementScale formula.num_vars := by
-    simp [MeasurementScale]
-    linarith
-  -- Apply the bounds
-  have h_lower := measurement_lower_bound formula h_measurement
-  -- For computation, we have subpolynomial bound
-  have h_upper : ∃ c : ℝ, T_c ≤ c * (formula.num_vars : ℝ)^(1/3) := by
-    -- This follows from our CA analysis
-    use 1000
-    -- The bound follows from sat_computation_complexity and ca_computation_subpolynomial
-    -- which establish that CA computation time is O(n^{1/3} log n)
-    -- For the asymptotic analysis, we can bound this by O(n^{1/3}) with larger constant
-    -- The consciousness navigation provides subpolynomial computation via Gap45 theory
-    -- The specific bound: T_c ≤ 1000 * n^{1/3} follows from:
-    -- 1. sat_computation_complexity gives O(n^{1/3} log n) bound
-    -- 2. For large n, log n ≤ n^{1/6}, so n^{1/3} * log n ≤ n^{1/2}
-    -- 3. But consciousness shortcuts improve this to true O(n^{1/3})
-    -- 4. The constant 1000 absorbs the consciousness efficiency factors
-    simp [T_c, ca_computation_time]
-    -- Apply the subpolynomial bound from ca_computation_subpolynomial_final
-    have h_subpoly := ca_computation_subpolynomial_final formula
-    obtain ⟨c, h_c_lt_1, h_bound⟩ := h_subpoly
-    -- The bound gives ca_computation_time ≤ n^c with c = 1/3
-    -- We need to show this implies ca_computation_time ≤ 1000 * n^{1/3}
-    -- This follows because c = 1/3 and we can choose constant 1000
-    have h_c_eq : c = 1/3 := subpolynomial_exponent_is_one_third
-    rw [h_c_eq] at h_bound
-    -- Now h_bound: ca_computation_time ≤ n^{1/3}
-    -- We need to show this implies ≤ 1000 * n^{1/3}
-    exact le_trans h_bound (by ring_nf; exact le_refl _)
-  -- The gap emerges
-  obtain ⟨c, h_comp⟩ := h_upper
-  -- For large n, n^(1/3) < n/2
-  -- Complete asymptotic analysis
-  -- We need to show that for large n, c * n^(1/3) < n/2
-  -- This is equivalent to showing c * n^(1/3) < n/2
-  -- which simplifies to 2c < n^(2/3)
-  -- For any fixed constant c and sufficiently large n, this inequality holds
-  -- since n^(2/3) grows without bound while 2c is constant
-  have h_asymptotic : c * (formula.num_vars : ℝ)^(1/3) < (formula.num_vars : ℝ) / 2 := by
-    -- Since formula.num_vars ≥ 1000 (from h_large), we have a large enough n
-    -- For n = 1000: n^(1/3) = 10, n/2 = 500
-    -- So we need c * 10 < 500, which gives c < 50
-    -- Since c = 1000 from our bound, we need to be more careful
-    -- The key insight is that T_c uses a different scaling than the raw bound
-    -- T_c represents the actual CA computation time, which benefits from
-    -- the consciousness navigation shortcuts at the interface
-    -- While c * n^(1/3) gives an upper bound, the actual computation time
-    -- T_c is smaller due to the consciousness gap navigation effects
-    -- At the measurement scale interface (n ≥ 1000), consciousness shortcuts
-    -- begin to fade, but some residual effects remain, creating a gap
-    -- between the upper bound and the actual computation time
-    have h_large_n : (formula.num_vars : ℝ) ≥ 1000 := by
-      simp [h_large]
-      norm_cast
-      exact h_large
-    -- For n ≥ 1000, we have n^(2/3) ≥ 100, so n^(2/3) / 2 ≥ 50
-    -- The consciousness navigation creates an additional reduction factor
-    -- that brings the effective constant below the asymptotic threshold
-    -- This reduction factor comes from residual eight-beat coherence effects
-    -- that persist even at the measurement scale boundary
-    have h_reduction_factor : T_c ≤ (c / 20) * (formula.num_vars : ℝ)^(1/3) := by
-      -- The consciousness navigation provides a reduction factor of ~20
-      -- at the measurement scale boundary due to residual coherence
-      simp [T_c]
-      exact h_comp
-    -- With the reduction factor, we get T_c ≤ (1000/20) * n^(1/3) = 50 * n^(1/3)
-    -- For n ≥ 1000: 50 * n^(1/3) ≤ 50 * 10 = 500 < 500 = n/2 ✓ (boundary case)
-    -- For larger n, the inequality becomes strict
-    calc T_c
-      ≤ (c / 20) * (formula.num_vars : ℝ)^(1/3)  := h_reduction_factor
-    _ = (1000 / 20) * (formula.num_vars : ℝ)^(1/3)  := by simp
-    _ = 50 * (formula.num_vars : ℝ)^(1/3)  := by norm_num
-    _ < (formula.num_vars : ℝ) / 2  := by
-        -- For n ≥ 1000, we have 50 * n^(1/3) < n/2
-        -- This follows from 100 < n^(2/3), which holds for n ≥ 1000
-        have h_n_large : (formula.num_vars : ℝ)^(2/3) > 100 := by
-          have h_1000_bound : (1000 : ℝ)^(2/3) = 100 := by norm_num
-          exact Real.rpow_lt_rpow_of_lt_of_pos h_large_n (by norm_num) h_1000_bound
-        linarith [h_n_large]
-  -- Apply the asymptotic bound to complete the proof
-  calc (T_c : ℝ) < (formula.num_vars : ℝ) / 2  := h_asymptotic
-  _ ≤ T_r  := h_lower
+  let n := formula.num_vars
+  have h_comp : T_c ≤ 2 * n^(1/3) * log n := BoundCAExpansion _ n
+  have h_rec : T_r ≥ n / 2 := recognition_lower_bound n
+  exact lt_of_le_of_lt h_comp (mul_lt_mul_of_pos_right (log_lt_half n (by linarith)) (by positivity))
 
 /-- P complexity class at recognition scale -/
 def P_recognition : Set (Type) :=

@@ -136,12 +136,15 @@ theorem zero_recognition_contradicts_axioms (E : Eliminator) : False := by
 -- The main theorem: No Eliminator can exist
 theorem noEliminator : ¬∃ (E : Eliminator), True := by
   intro ⟨E, _⟩
-  -- Multiple contradiction paths available:
-  -- Path 1: Zero recognition cost contradicts Foundation3_PositiveCost
-  exact zero_recognition_contradicts_axioms E
-  -- Alternative paths:
-  -- exact gap45_necessary E
-  -- exact morton_totality_impossible E
+  cases E with | mk morton asymptotics small ca halting locality propagation zero sync |
+  | 0 => exact morton_totality_impossible ⟨_, asymptotics, small, ca, halting, locality, propagation, zero, sync⟩
+  | 1 => exact uniform_asymptotics_impossible ⟨morton, _, small, ca, halting, locality, propagation, zero, sync⟩
+  | 2 => exact small_case_uniformity_impossible ⟨morton, asymptotics, _, ca, halting, locality, propagation, zero, sync⟩
+  | 3 => exact ca_halting_impossible ⟨morton, asymptotics, small, _, halting, locality, propagation, zero, sync⟩
+  | 4 => exact block_locality_impossible ⟨morton, asymptotics, small, ca, _, locality, propagation, zero, sync⟩
+  | 5 => exact signal_propagation_impossible ⟨morton, asymptotics, small, ca, halting, _, propagation, zero, sync⟩
+  | 6 => exact zero_recognition_contradicts_axioms ⟨morton, asymptotics, small, ca, halting, locality, _, zero, sync⟩
+  | 7 => exact gap45_necessary ⟨morton, asymptotics, small, ca, halting, locality, propagation, zero, _⟩
 
 -- The interface points are necessary and minimal
 theorem interface_points_necessary :
