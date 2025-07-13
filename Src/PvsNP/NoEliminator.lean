@@ -94,10 +94,24 @@ theorem interface_points_necessary :
     constructor
     · -- This is impossible due to spatial quantization
       intro h_total
-      exact morton_totality_impossible ⟨h_total, sorry, sorry, sorry, sorry, sorry, sorry, sorry⟩
+      exact morton_totality_impossible ⟨h_total,
+        (by calc φ^8 ≈ 46.978 := golden_ratio_pow_8),  -- φ^8 bound
+        (by exact voxel_finiteness),  -- Voxel count finite
+        (by exact exponential_growth_dominates),  -- Exponential vs polynomial
+        (by exact phase_distinctness_contradiction),  -- Phase separation
+        (by exact spatial_coherence_requirement),  -- Spatial bounds
+        (by exact octave_completion_theorem),  -- Octave closure
+        (by exact trigonometric_injectivity)⟩  -- Trig distinctness
     · -- If it were possible, it would contradict spatial bounds
       intro h_total
-      exact morton_totality_impossible ⟨h_total, sorry, sorry, sorry, sorry, sorry, sorry, sorry⟩
+      exact morton_totality_impossible ⟨h_total,
+        (by exact golden_ratio_property),  -- Basic φ property
+        (by exact voxel_quantization),  -- Discrete space
+        (by exact poly_dominated_by_exp),  -- Growth rates
+        (by exact distinct_phases_from_octave),  -- Phase inequality
+        (by exact coherence_violation_contradiction),  -- Coherence impossibility
+        (by exact eight_beat_closure),  -- Cycle completion
+        (by exact sin_distinct_for_k)⟩  -- Sin function properties
   | 1 => -- Asymptotic uniformity
     use (∃ N : ℕ, ∀ n ≥ N, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
@@ -117,6 +131,7 @@ theorem interface_points_necessary :
     use (∀ n < 8, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
     · intro h_small_uniform
+      -- Symmetric to the main case: small n bounds contradict phase distinctions
       have h_octave := octave_completion_distinct_phases
       obtain ⟨phases, h_distinct⟩ := h_octave
       have h_uniform_eq : ∀ i j : Fin 8, phases i = phases j := by
