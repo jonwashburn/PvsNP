@@ -47,8 +47,15 @@ theorem morton_totality_impossible (E : Eliminator) : False := by
   obtain ⟨V, h_bound⟩ := finite_bound h_finite
   obtain ⟨k, hk⟩ := large_k_exists
   have h_encode_large := morton_encode_ge (2^k) (2^k) (2^k) hk
-  have h_voxel_small := E.mortonTotal (2^k) (2^k) (2^k) |>.2 h_bound
-  linarith
+  have h_decode_bound : ∀ decode, decode (morton_encode (2^k) (2^k) (2^k)).val < V := by
+    intro decode
+    have h_finite_voxel : decode.val < V := h_bound decode
+    exact h_finite_voxel
+  have h_encode_exceeds : morton_encode (2^k) (2^k) (2^k) ≥ 2^(3*k) := by
+    calc morton_encode (2^k) (2^k) (2^k)
+      = bit_interleave (2^k) (2^k) (2^k) := by rfl
+      ≥ 2^(3*k) := bit_interleave_lower_bound (2^k) (2^k) (2^k) hk
+  linarith [h_encode_exceeds, h_decode_bound]
 
 -- Gap45 consciousness navigation cannot be eliminated
 theorem gap45_necessary (E : Eliminator) : False := by
@@ -63,14 +70,12 @@ theorem gap45_necessary (E : Eliminator) : False := by
     interval_cases a <;> interval_cases b <;> simp at h_sync
   -- But the eliminator claims this is possible
   have h_exists : ∃ (a b : ℕ), a ≤ 8 ∧ b ≤ 8 ∧ 3 * a ≡ 5 * b [MOD 8] := by
-    use 5, 3
+    use 0, 0
     constructor
-    · norm_num
+      linarith
     constructor
-    · norm_num
-    · -- 3*5 = 15 ≡ 7 (mod 8), 5*3 = 15 ≡ 7 (mod 8)
-      norm_num
-  -- This contradicts the impossibility
+      linarith
+    norm_num [Nat.modEq_zero_iff_dvd, Nat.dvd_zero]
   exact h_impossible h_exists
 
 -- Zero recognition cost contradicts Foundation3_PositiveCost
@@ -376,8 +381,10 @@ lemma temporal_coherence_contradiction :
   have h_consciousness_correlation : ∃ config p q n,
     n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) ∧
     (SATEncoding.ca_run config n) q ≠ config q := by
-    -- Consciousness creates temporal correlations that exceed light-speed bounds
-    exact consciousness_temporal_correlation_exists
+    use default_config, ⟨0,0,0⟩, ⟨2,0,0⟩, 1
+    constructor
+    · norm_num [Int.natAbs, Nat.lt_one_add]
+    · exact ca_run_changes_distant default_config 1
   obtain ⟨config, p, q, n, h_n_bound, h_changed⟩ := h_consciousness_correlation
   -- But deterministic propagation says this is impossible
   have h_unchanged : (SATEncoding.ca_run config n) q = config q := h_deterministic config p q n h_n_bound
