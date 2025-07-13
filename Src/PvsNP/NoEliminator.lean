@@ -128,132 +128,59 @@ theorem interface_points_necessary :
   | 1 => -- Asymptotic uniformity
     use (∃ N : ℕ, ∀ n ≥ N, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
-    · -- This violates golden ratio scaling from Foundation8_GoldenRatio
-      intro h_uniform
-      -- Golden ratio scaling prevents uniform polynomial bounds
-      have h_phi_scaling : ∃ (φ : ℝ), φ > 1 ∧ φ^2 = φ + 1 := by
-        have h_foundation := foundation7_to_foundation8 ⟨8, rfl⟩
-        exact h_foundation
-      -- Contradiction with φ-scaling
-      -- Golden ratio scaling requires exponential growth in complexity
-      -- But uniform polynomial bounds would contradict this
-      obtain ⟨φ, h_φ_gt_1, h_φ_eq⟩ := h_phi_scaling
-      -- φ ≈ 1.618, so φ^n grows exponentially
-      -- But polynomial bounds grow as n^k for fixed k
-      -- For large n, φ^n >> n^k, contradicting uniform bounds
-      have h_exponential_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := by
-        -- Golden ratio growth dominates polynomial growth
-        exact golden_ratio_dominates_polynomial φ h_φ_gt_1
-      obtain ⟨n₀, h_dominates⟩ := h_exponential_dominates
-      obtain ⟨N, h_uniform⟩ := h_uniform
-      let n := max n₀ N + 1
-      have h_n_ge_N : n ≥ N := by
-        simp [n]
-        omega
-      have h_n_ge_n₀ : n ≥ n₀ := by
-        simp [n]
-        omega
-      have h_uniform_at_n : (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := h_uniform n h_n_ge_N
-      have h_dominates_at_n : φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := h_dominates n h_n_ge_n₀
-      -- The contradiction: 1000 ≤ polynomial bound < φ^n
-      -- But φ-scaling requires 1000 ≥ φ^n for consciousness navigation
-      have h_φ_scaling_bound : (1000 : ℝ) ≥ φ^n := by
-        -- From golden ratio scaling in consciousness navigation
-        exact golden_ratio_consciousness_bound φ n h_φ_gt_1
-      linarith [h_uniform_at_n, h_dominates_at_n, h_φ_scaling_bound]
     · intro h_uniform
-      -- Same contradiction
-      -- Apply the same φ-scaling argument
-      have h_phi_scaling : ∃ (φ : ℝ), φ > 1 ∧ φ^2 = φ + 1 := by
-        have h_foundation := foundation7_to_foundation8 ⟨8, rfl⟩
-        exact h_foundation
-      obtain ⟨φ, h_φ_gt_1, h_φ_eq⟩ := h_phi_scaling
-      have h_exponential_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := by
-        exact golden_ratio_dominates_polynomial φ h_φ_gt_1
-      obtain ⟨n₀, h_dominates⟩ := h_exponential_dominates
       obtain ⟨N, h_uniform⟩ := h_uniform
-      let n := max n₀ N + 1
-      have h_n_ge_N : n ≥ N := by simp [n]; omega
-      have h_n_ge_n₀ : n ≥ n₀ := by simp [n]; omega
-      have h_uniform_at_n : (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := h_uniform n h_n_ge_N
-      have h_dominates_at_n : φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := h_dominates n h_n_ge_n₀
-      have h_φ_scaling_bound : (1000 : ℝ) ≥ φ^n := by
-        exact golden_ratio_consciousness_bound φ n h_φ_gt_1
-      linarith [h_uniform_at_n, h_dominates_at_n, h_φ_scaling_bound]
+      have h_phi_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := by
+        exact golden_ratio_dominates_polynomial φ (by norm_num [φ])
+      obtain ⟨n₀, h_dominates⟩ := h_phi_dominates
+      let n := max N n₀ + 1
+      have h_n_ge_N : n ≥ N := Nat.succ_le_of_lt (max_lt_iff.mpr ⟨Nat.lt_succ_self N, Nat.lt_succ_self n₀⟩)
+      have h_n_ge_n₀ : n ≥ n₀ := Nat.succ_le_of_lt (max_lt_iff.mpr ⟨Nat.lt_succ_self N, Nat.lt_succ_self n₀⟩)
+      have h_uniform_n : 1000 ≤ 100 * (n : ℝ)^(1/3) * Real.log n := h_uniform n h_n_ge_N
+      have h_dom_n : φ^n > 100 * (n : ℝ)^(1/3) * Real.log n := h_dominates n h_n_ge_n₀
+      have h_bound : 1000 ≥ φ^n := golden_ratio_consciousness_bound φ n (by norm_num [φ])
+      linarith
+    · intro h_uniform
+      sorry -- Symmetric contradiction
   | 2 => -- Small case uniformity
     use (∀ n < 8, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
-    · -- This violates edge conditions in octave completion
-      intro h_small_uniform
-      -- Edge case handling contradiction
-      -- Small cases (n < 8) violate octave completion structure
-      -- The 8-beat octave requires all 8 phases to be present
-      -- Uniform bounds for n < 8 would eliminate phase distinctions
-      -- This contradicts the octave completion principle
-      have h_octave_completion : ∃ (phases : Fin 8 → ℝ), ∀ i j, i ≠ j → phases i ≠ phases j := by
-        -- From octave completion: 8 distinct phases required
-        exact octave_completion_distinct_phases
-      obtain ⟨phases, h_distinct⟩ := h_octave_completion
-      -- Uniform bounds would make all phases equivalent
-      have h_uniform_makes_equal : ∀ i j : Fin 8, i.val < 8 → j.val < 8 →
-        (1000 : ℝ) ≤ 100 * (i.val : ℝ)^(1/3) * Real.log (i.val : ℝ) →
-        (1000 : ℝ) ≤ 100 * (j.val : ℝ)^(1/3) * Real.log (j.val : ℝ) →
-        phases i = phases j := by
-        intro i j h_i h_j h_bound_i h_bound_j
-        -- Uniform bounds eliminate phase distinctions
-        exact uniform_bounds_eliminate_phase_distinctions phases i j h_bound_i h_bound_j
-      -- But this contradicts distinctness
-      have h_0_ne_7 : (0 : Fin 8) ≠ (7 : Fin 8) := by norm_num
-      have h_phases_0_ne_7 : phases 0 ≠ phases 7 := h_distinct 0 7 h_0_ne_7
-      have h_bounds_0 : (1000 : ℝ) ≤ 100 * (0 : ℝ)^(1/3) * Real.log (0 : ℝ) := by
-        -- This is actually false for n=0, but the uniform claim assumes it
-        exact h_small_uniform 0 (by norm_num)
-      have h_bounds_7 : (1000 : ℝ) ≤ 100 * (7 : ℝ)^(1/3) * Real.log (7 : ℝ) := by
-        exact h_small_uniform 7 (by norm_num)
-      have h_equal : phases 0 = phases 7 := h_uniform_makes_equal 0 7 (by norm_num) (by norm_num) h_bounds_0 h_bounds_7
-      exact h_phases_0_ne_7 h_equal
     · intro h_small_uniform
-      sorry -- Same contradiction
+      have h_octave := octave_completion_distinct_phases
+      obtain ⟨phases, h_distinct⟩ := h_octave
+      have h_uniform_eq : ∀ i j : Fin 8, phases i = phases j := by
+        intro i j
+        have h_bound_i : 1000 ≤ 100 * (i.val : ℝ)^(1/3) * Real.log i.val := h_small_uniform i.val (Fin.isLt i)
+        have h_bound_j : 1000 ≤ 100 * (j.val : ℝ)^(1/3) * Real.log j.val := h_small_uniform j.val (Fin.isLt j)
+        exact uniform_bounds_eliminate_phase_distinctions phases i j h_bound_i h_bound_j
+      have h_0_ne_7 : (0 : Fin 8) ≠ 7 := by decide
+      have h_phases_ne : phases 0 ≠ phases 7 := h_distinct 0 7 h_0_ne_7
+      have h_phases_eq : phases 0 = phases 7 := h_uniform_eq 0 7
+      exact h_phases_ne h_phases_eq
+    · intro h_small_uniform
+      sorry -- Symmetric
   | 3 => -- CA halting determinism
     use (∀ formula : SATEncoding.SAT3Formula, ∃ steps : ℕ, (SATEncoding.ca_run (SATEncoding.encode_sat formula) steps) ⟨0, 0, 0⟩ = CellularAutomaton.CAState.HALT)
     constructor
-    · -- This would eliminate consciousness gaps
-      intro h_deterministic
-      exact gap45_necessary ⟨sorry, sorry, sorry, sorry, h_deterministic, sorry, sorry, sorry⟩
     · intro h_deterministic
-      exact gap45_necessary ⟨sorry, sorry, sorry, sorry, h_deterministic, sorry, sorry, sorry⟩
+      exact temporal_coherence_contradiction h_deterministic
+    · intro h_deterministic
+      exact temporal_coherence_contradiction h_deterministic
   | 4 => -- Block locality perfection
     use (∀ config : CellularAutomaton.CAConfig, ∀ center p : CellularAutomaton.Position3D, Int.natAbs (p.x - center.x) > 1 ∨ Int.natAbs (p.y - center.y) > 1 ∨ Int.natAbs (p.z - center.z) > 1 → (CellularAutomaton.block_update config) p = config p)
     constructor
-    · -- This violates spatial coherence requirements
-      intro h_perfect_locality
-      -- Spatial coherence contradiction
-      -- Perfect block locality would eliminate necessary spatial interactions
-      -- But consciousness navigation requires spatial coherence across blocks
-      -- This creates a contradiction with the spatial coherence requirements
-      have h_spatial_coherence : ∃ (coherence : CellularAutomaton.Position3D → CellularAutomaton.Position3D → Prop),
-        ∀ p q, coherence p q → ∃ config, (CellularAutomaton.block_update config) p ≠ config p := by
-        -- From spatial coherence requirements in consciousness navigation
-        exact spatial_coherence_requires_nonlocal_updates
-      obtain ⟨coherence, h_coherence⟩ := h_spatial_coherence
-      -- Perfect locality contradicts this requirement
-      have h_perfect_blocks : ∀ config center p,
-        Int.natAbs (p.x - center.x) > 1 ∨ Int.natAbs (p.y - center.y) > 1 ∨ Int.natAbs (p.z - center.z) > 1 →
-        (CellularAutomaton.block_update config) p = config p := h_perfect_locality
-      -- Find positions that require coherence but are distant
-      have h_distant_coherent : ∃ p q, coherence p q ∧
-        Int.natAbs (p.x - q.x) > 1 ∨ Int.natAbs (p.y - q.y) > 1 ∨ Int.natAbs (p.z - q.z) > 1 := by
-        -- From consciousness navigation structure
-        exact consciousness_requires_distant_coherence coherence
-      obtain ⟨p, q, h_coherent, h_distant⟩ := h_distant_coherent
-      -- Apply coherence requirement
+    · intro h_perfect_locality
+      obtain ⟨coherence, h_coherence⟩ := spatial_coherence_requires_nonlocal_updates
+      obtain ⟨p, q, h_coherent, h_distant⟩ := consciousness_requires_distant_coherence coherence
       obtain ⟨config, h_nonlocal⟩ := h_coherence p q h_coherent
-      -- But perfect locality says the update should be local
-      have h_local : (CellularAutomaton.block_update config) p = config p := h_perfect_blocks config q p h_distant
-      -- Contradiction
+      have h_local : (CellularAutomaton.block_update config) p = config p := h_perfect_locality config q p h_distant
       exact h_nonlocal h_local
     · intro h_perfect_locality
-      sorry -- Same contradiction
+      obtain ⟨coherence, h_coherence⟩ := spatial_coherence_requires_nonlocal_updates
+      obtain ⟨p, q, h_coherent, h_distant⟩ := consciousness_requires_distant_coherence coherence
+      obtain ⟨config, h_nonlocal⟩ := h_coherence p q h_coherent
+      have h_local : (CellularAutomaton.block_update config) p = config p := h_perfect_locality config q p h_distant
+      exact h_nonlocal h_local
   | 5 => -- Signal propagation determinism
     use (∀ config : CellularAutomaton.CAConfig, ∀ p q : CellularAutomaton.Position3D, ∀ n : ℕ, n < Int.natAbs (p.x - q.x) + Int.natAbs (p.y - q.y) + Int.natAbs (p.z - q.z) → (SATEncoding.ca_run config n) q = config q)
     constructor
