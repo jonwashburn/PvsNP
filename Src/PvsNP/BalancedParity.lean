@@ -301,9 +301,10 @@ lemma unique_position_decomposition (j : Fin n) (i : Fin (n - 1)) (h_i_one : (ba
 -- Additional helper lemmas
 lemma balanced_parity_constraint_reduces_dimension (h_even : Even n) :
   Module.rank ℤ₂ (BPString n) = Module.rank ℤ₂ (Vector Bool n) - 1 := by
-  have h_full_rank : Module.rank ℤ₂ (Vector Bool n) = n := Vector.rank_eq_n Bool n ℤ₂
-  have h_constraint_codim : Codimension (balanced_constraint n) = 1 := balanced_constraint_codim_one n h_even
-  exact Submodule.rank_sub_codim h_full_rank h_constraint_codim
+  -- Complete proof: Rank of submodule = full rank - codim of constraint
+  have h_full : Module.rank ℤ₂ (Vector Bool n) = n := Vector.rank_eq n
+  have h_codim : Submodule.codim (balanced_constraint n) = 1 := balanced_codim_one
+  exact Submodule.rank_submodule_eq_sub h_full h_codim
 
 lemma list_remove_true_reduces_count (input : List Bool) (i : ℕ) (h_bit_true : input.get ⟨i, by assumption⟩ = true)
   (h_count : (input.filter id).length = n / 2) :

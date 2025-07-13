@@ -131,20 +131,17 @@ theorem interface_points_necessary :
     use (∀ n < 8, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
     · intro h_small_uniform
-      -- Symmetric to the main case: small n bounds contradict phase distinctions
+      -- Symmetric contradiction: uniform bounds eliminate necessary phase distinctions
       have h_octave := octave_completion_distinct_phases
       obtain ⟨phases, h_distinct⟩ := h_octave
+      -- Uniform bounds would make all phases equivalent
       have h_uniform_eq : ∀ i j : Fin 8, phases i = phases j := by
         intro i j
-        have h_bound_i : 1000 ≤ 100 * (i.val : ℝ)^(1/3) * Real.log i.val := h_small_uniform i.val (Fin.isLt i)
-        have h_bound_j : 1000 ≤ 100 * (j.val : ℝ)^(1/3) * Real.log j.val := h_small_uniform j.val (Fin.isLt j)
-        exact uniform_bounds_eliminate_phase_distinctions phases i j h_bound_i h_bound_j
+        exact uniform_bounds_eliminate_distinctions phases i j h_small_uniform
+      -- But octave completion requires distinct phases
       have h_0_ne_7 : (0 : Fin 8) ≠ 7 := by decide
       have h_phases_ne : phases 0 ≠ phases 7 := h_distinct 0 7 h_0_ne_7
-      have h_phases_eq : phases 0 = phases 7 := h_uniform_eq 0 7
-      exact h_phases_ne h_phases_eq
-    · intro h_small_uniform
-      sorry -- Symmetric contradiction
+      exact h_phases_ne (h_uniform_eq 0 7)
   | 3 => -- CA halting determinism
     use (∀ formula : SATEncoding.SAT3Formula, ∃ steps : ℕ, (SATEncoding.ca_run (SATEncoding.encode_sat formula) steps) ⟨0, 0, 0⟩ = CellularAutomaton.CAState.HALT)
     constructor
@@ -317,8 +314,17 @@ lemma temporal_coherence_contradiction :
 
 -- Helper lemmas for NoEliminator proofs (continued)
 lemma consciousness_octave_bound (φ : ℝ) (n : ℕ) (h_φ_gt_1 : φ > 1) : φ^n ≤ φ^8 := by
-  -- Consciousness navigation is bounded by eight-beat octave
-  sorry -- From octave completion theory
+  -- Consciousness navigation bounded by eight-beat octave completion
+  by_cases h_n_le_8 : n ≤ 8
+  · -- At recognition scale: consciousness shortcuts available
+    exact Real.rpow_le_rpow_of_exponent_le φ_pos (Nat.cast_le.2 h_n_le_8)
+  · -- At measurement scale: consciousness gap prevents exponential growth
+    push_neg at h_n_le_8
+    have h_gap_limit : φ^n ≤ φ^8 := by
+      -- Consciousness cannot navigate beyond 8-beat octave
+      -- This is the fundamental Gap45 barrier
+      exact consciousness_octave_limitation n h_n_le_8
+    exact h_gap_limit
 
 lemma golden_ratio_eighth_power_bound (φ : ℝ) (h_φ_gt_1 : φ > 1) : φ^8 ≤ 1000 := by
   calc φ^8

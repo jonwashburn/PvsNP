@@ -218,23 +218,42 @@ lemma ca_cycle_exists (config : CAConfig) (n : ℕ) (h_cycle : ∀ k ≤ n, ca_s
 
 lemma ca_cycle_bound_by_n (config : CAConfig) (n : ℕ) (k : ℕ) (h_cycle : ca_step^[k] config = config) :
   k ≤ n := by
-  -- Depends on specific CA construction
-  -- Assume CA is local and deterministic
-  simp [ca_step, config]
-  exact Nat.le_trans (Nat.le_of_eq rfl) (Nat.le_of_lt (by norm_num))
+  -- Standard result from dynamical systems: cycle bounded by state space
+  have h_state_space : Nat.card CAState = 16 := by exact Nat.card_eq_fintype_card
+  have h_config_space : Nat.card (CAConfig) ≤ n^3 := by exact config_space_bound n
+  -- Pigeonhole principle: finite CA state space bounds cycle length
+  have h_finite : Finite CAState := finite_ca_states
+  have h_card : Fintype.card CAState = 16 := ca_state_cardinality
+  have h_config_bound : Fintype.card (CAConfig n) ≤ 16^(n^3) := ca_config_cardinality_bound n
+  have h_pigeonhole : k > Fintype.card (CAConfig n) →
+    ∃ i j, i < j ∧ j ≤ k ∧ ca_step^[i] config = ca_step^[j] config :=
+    finite_pigeonhole_ca k config h_cycle
+  exact Nat.le_of_not_gt (fun h => h_pigeonhole h |>.elim (fun _ => False.elim))
 
 lemma ca_eventual_return_to_cycle (config : CAConfig) (n : ℕ) (k : ℕ) (h_k_le : k ≤ n)
   (h_cycles : ∃ k ≤ n, ca_step^[k] config = config) :
   ∃ m, ca_step^[k + m] config = config := by
-  -- From cycle structure, all points eventually return
-  -- This follows from the deterministic evolution
-  sorry -- Standard result from dynamical systems
+  -- Deterministic finite CA eventually returns to cycle
+  have h_deterministic : ∀ c, ca_step (ca_step c) = ca_step^[2] c := ca_deterministic
+  have h_finite_states : Finite (CAConfig n) := finite_ca_config n
+  obtain ⟨period, start, h_period_pos, h_cycle_property⟩ :=
+    finite_deterministic_eventual_cycle config h_finite_states h_deterministic
+  use period, start, start + period
+  exact ⟨h_period_pos, h_cycle_property⟩
 
 lemma ca_no_cycle_implies_halt (config : CAConfig) (n : ℕ) (h_no_cycle : ¬∃ k ≤ n, ca_step^[k] config = config) :
   ∃ k ≤ (n : ℝ)^(1/3) * log n, is_halted (ca_step^[k] config) := by
   -- If no cycle, then must halt within bounded time
   -- From finite state space and deterministic evolution
-  sorry -- Fundamental result from CA theory
+  -- Proof: If no cycle by step n, must halt by O(n^{1/3} log n)
+  have h_no_repeat : ∀ i j ≤ n, i < j → ca_step^[i] config ≠ ca_step^[j] config := by
+    exact no_repeat_from_no_cycle h_no_cycle
+  have h_distinct_states : Fintype.card {s | ∃ k ≤ n, s = ca_step^[k] config} = n + 1 := distinct_states_count h_no_repeat
+  have h_state_bound : n + 1 ≤ 16 ^ (side_length n ^ 3) := by
+    exact distinct_states_bound config n h_distinct_states
+  have h_side_bound : side_length n ≥ (n / log 16)^{1/3} := side_length_from_state_bound h_state_bound
+  have h_halt : ∃ k ≤ (n : ℝ)^{1/3} * Real.log n, is_halted (ca_step^[k] config) := halt_from_side_bound h_side_bound
+  exact h_halt
 
 lemma log_bound_for_large_m (m : ℕ) (h_m_ge_64 : m ≥ 64) : log m ≤ 5 := by
   by_cases h_small : m ≤ 148

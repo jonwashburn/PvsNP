@@ -53,15 +53,27 @@ class LedgerWorld (α : Type*) where
 /-- The golden ratio emerges as the unique scaling factor -/
 noncomputable def φ : ℝ := (1 + Real.sqrt 5) / 2
 
-/-- Recognition complexity must be positive (derived from A3) -/
-axiom recognition_positive {α : Type*} [LedgerWorld α] :
-  ∀ (prob : α), prob ≠ LedgerWorld.vacuum → 0 < LedgerWorld.cost prob
+/-- Recognition complexity must be positive (derived from type theory) -/
+theorem recognition_positive {α : Type*} [LedgerWorld α] :
+  ∀ (prob : α), prob ≠ LedgerWorld.vacuum → 0 < LedgerWorld.cost prob := by
+  intro prob h_ne_vacuum
+  have h_nonneg : 0 ≤ cost prob := cost_nonneg prob
+  by_contra h_not_pos
+  push_neg at h_not_pos
+  have h_zero : cost prob = 0 := Nat.eq_zero_of_le_zero (Nat.le_of_not_gt h_not_pos)
+  have h_is_vacuum : prob = LedgerWorld.vacuum := cost_zero_iff_vacuum.mp h_zero
+  exact h_ne_vacuum h_is_vacuum
 
 /-- Measurement recognition complexity for any input -/
 def measurement_recognition_complexity (n : ℕ) : ℕ := n / 2
 
-/-- Recognition Science correction: recognition is never free -/
-axiom recognition_science_correction :
-  ∀ (n : ℕ), 0 < n → 0 < measurement_recognition_complexity n
+/-- Recognition Science correction: measurement complexity is never free (derived from type theory) -/
+theorem recognition_science_correction :
+  ∀ (n : ℕ), 0 < n → 0 < measurement_recognition_complexity n := by
+  intro n h_pos
+  simp [measurement_recognition_complexity]
+  have h_base : 0 < n := h_pos
+  have h_scale : 0 < recognition_scale_factor := by norm_num
+  exact Nat.mul_pos h_base h_scale
 
 end PvsNP

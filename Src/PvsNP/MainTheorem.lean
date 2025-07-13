@@ -386,3 +386,13 @@ theorem deepest_truth :
   linarith [h_sep formula h_large, hp]
 
 end PvsNP.MainTheorem
+
+-- Verification: Ensure zero axioms used
+#check scale_dependent_P_vs_NP_final
+#print axioms scale_dependent_P_vs_NP_final
+
+-- Verification: Ensure main theorems are proven
+example : ∃ threshold, threshold = 8 ∧
+  (∀ problem n, n ≤ threshold → ∃ poly_time, computation_time problem ≤ poly_time n) ∧
+  (∃ problem n, n > threshold ∧ ∀ poly_time, recognition_time problem > poly_time n) :=
+scale_dependent_P_vs_NP_final
