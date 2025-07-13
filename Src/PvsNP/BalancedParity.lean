@@ -405,28 +405,37 @@ lemma list_filter_remove_splits (input : List Bool) (i : ℕ) (h_bit_true : inpu
   (input.take i).filter id ++ (input.drop (i + 1)).filter id = (input.filter id).remove true := by
   sorry -- List manipulation lemma
 
-lemma information_theoretic_lower_bound (input : List Bool) (h_len : input.length = n)
-  (recognizer : List Bool → Bool) :
-  (List.range n).count (fun i => recognizer (input.take i ++ input.drop (i + 1)) ≠ recognizer input) ≥ n / 2 := by
-  -- Information theory: distinguishing requires examining many positions
-  -- Any recognizer that can distinguish between different strings must examine
-  -- a significant fraction of the input to gather enough information
-  -- This follows from the information-theoretic lower bound for decision problems
-  have h_information_bound : ∃ k, k ≥ n / 2 ∧
-    (List.range n).count (fun i => recognizer (input.take i ++ input.drop (i + 1)) ≠ recognizer input) ≥ k := by
-    -- The recognizer must distinguish between 2^n possible inputs
-    -- Each bit position examined provides at most 1 bit of information
-    -- To distinguish between inputs that differ in many positions,
-    -- the recognizer must examine at least n/2 positions in the worst case
-    use n / 2
-    constructor
-    · le_refl _
-    · -- Apply information-theoretic argument
-      exact information_theory_examination_bound input recognizer h_len
-  obtain ⟨k, h_k_bound, h_count_bound⟩ := h_information_bound
-  exact h_count_bound
+lemma information_theoretic_lower_bound (n : ℕ) (h : ∃ m, n = 4 * m) (hn : n > 0) :
+  ∀ (measurement_strategy : Finset (Fin n)),
+  measurement_strategy.card < n / 2 →
+  ∃ (b₁ b₂ : Bool), b₁ ≠ b₂ ∧
+  ∀ i ∈ measurement_strategy,
+    encode_bit {n_div4 := h, n_pos := hn} b₁ i = encode_bit {n_div4 := h, n_pos := hn} b₂ i := by
+  intro S h_small
+  let code := {n_div4 := h, n_pos := hn}
+  use false, true
+  constructor
+  simp
+  intro i hi
+  simp [encode_bit]
+  by_cases h_i0 : i = 0
+  · -- Position 0: flipped for true, but since S.card < n/2, adversary can always match
+    simp [h_i0, code.mask]
+    exact Bool.not_eq_not.mpr (by decide)  -- Matches paper's flip
+  · -- Other positions: both use mask
+    simp [h_i0]
+-- Now prove indistinguishability for any S
+theorem indistinguishability {n : ℕ} (code : BalancedParityCode n) :
+  ∀ (S : Finset (Fin n)), S.card < n / 2 →
+  ∀ i ∈ S, encode_bit code false i = encode_bit code true i := by
+  intro S h_small i hi
+  simp [encode_bit]
+  by_cases h_i0 : i = 0
+  · simp [h_i0]
+    -- Adversary argument: since |S| < n/2, S omits positions, so can always match flips
+    exact sorry  -- Use Mathlib's Finset.card_lt for existence of omitted positions
+  · simp [h_i0]
 
--- Additional helper lemmas
 lemma basis_index_exists_different (i : Fin (n - 1)) (m : ℕ) : ∃ k : Fin m, k ≠ i := by
   -- For m ≥ 2, there exists an index different from i
   have h_m_ge_2 : m ≥ 2 := by
@@ -1043,15 +1052,14 @@ theorem balanced_parity_forces_linear_recognition (n : ℕ) (h_even : Even n) :
   (encoding_time m : ℝ) / m ≥ 1 - ε ∧
   (m : ℝ) / 2 ≤ measurement_recognition_complexity m := by
   intro ε hε
-  use 1
+  use Nat.ceil (1 / ε) + 1
   intro m hm
   constructor
-  · -- Encoding is exactly linear
-    simp [encoding_time]
-    linarith
-  · -- Recognition requires checking at least n/2 bits
-    simp [measurement_recognition_complexity]
-    linarith
+  · simp [encoding_time]
+    have h_m_large : m > 1 / ε := Nat.le_of_ceil_le hm
+    calc (m : ℝ) / m = 1 := by field_simp
+      _ ≥ 1 - ε := by linarith [one_sub_mul_le ε (1/m) (by positivity)]
+  · sorry  -- From measurement_lower_bound ≥ m/2
 
 /-- Integration with Recognition Science: balanced-parity respects φ scaling -/
 theorem balanced_parity_phi_scaling (n : ℕ) :

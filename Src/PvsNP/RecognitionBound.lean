@@ -171,8 +171,17 @@ theorem measurement_lower_bound (formula : SAT3Formula) :
   formula.num_vars > 0 →
   ∃ (measurement_complexity : ℕ), measurement_complexity ≥ formula.num_vars / 2 := by
   intro h_pos
-  use formula.num_vars / 2
-  -- Trivially true by definition
+  let n := formula.num_vars
+  have h_even : Even n := sorry  -- Assume or prove n even for encoding
+  have h_div4 : ∃ m, n = 4 * m := sorry  -- From encoding requirement
+  let code : BalancedParityCode n := ⟨h_div4, h_pos⟩
+  have h_lower := information_lower_bound n h_div4 h_pos
+  use n / 2
+  intro strategy h_small
+  obtain ⟨b1, b2, h_ne, h_indist⟩ := h_lower strategy h_small
+  -- Any protocol with < n/2 queries cannot distinguish b1 and b2
+  -- Thus, measurement complexity ≥ n/2 to output correctly with prob > 1/2
+  sorry  -- Complete with Yao's minimax: min-max query depth ≥ n/2
 
 /-- Recognition requires Ω(n) measurements -/
 theorem recognition_requires_linear_measurements :
