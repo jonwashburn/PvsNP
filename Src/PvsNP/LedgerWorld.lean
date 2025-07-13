@@ -73,25 +73,28 @@ theorem phi_equation : φ^2 = φ + 1 := by
   ring
 
 /-- The LedgerWorld forms a group under tick operation -/
--- instance [LedgerWorld α] : Group α where
---   mul := tick
---   one := vacuum
---   inv a := tick^[7] a  -- Since tick^8 = id, tick^7 is the inverse
---   mul_assoc := by
---     intro a b c
---     simp [tick]
---   one_mul := by
---     intro a
---     simp [tick, vacuum]
---   mul_one := by
---     intro a
---     simp [tick, vacuum]
---   mul_left_inv := by
---     intro a
---     simp [tick]
---     have h : tick^[7] (tick a) = tick^[8] a := by simp [Function.iterate_succ']
---     rw [h, eight_beat]
---     rfl
+instance [LedgerWorld α] : Group α where
+  mul := tick
+  one := vacuum
+  inv a := tick^[7] a  -- Since tick^8 = id, tick^7 is the inverse
+  mul_assoc := by
+    intro a b c
+    simp [tick]
+    rfl
+  one_mul := by
+    intro a
+    simp [tick, vacuum]
+    sorry -- This would require more structure on vacuum
+  mul_one := by
+    intro a
+    simp [tick, vacuum]
+    sorry -- This would require more structure on vacuum
+  mul_left_inv := by
+    intro a
+    simp [tick]
+    have h : tick^[7] (tick a) = tick^[8] a := by simp [Function.iterate_succ']
+    rw [h, eight_beat]
+    rfl
 
 /-- Recognition complexity must be positive (derived from type theory) -/
 theorem recognition_positive {α : Type*} [LedgerWorld α] :
@@ -105,16 +108,33 @@ theorem recognition_positive {α : Type*} [LedgerWorld α] :
   exact h_ne_vacuum h_is_vacuum
 
 /-- The eight-beat structure creates a cyclic group Z/8Z -/
--- theorem eight_beat_cyclic {α : Type*} [LedgerWorld α] :
---   ∃ (φ : ℤ/8ℤ → α), Function.Bijective φ ∧
---   ∀ n : ℤ/8ℤ, φ (n + 1) = tick (φ n) := by
---   admit
+theorem eight_beat_cyclic {α : Type*} [LedgerWorld α] :
+  ∃ (φ : ℤ/8ℤ → α), Function.Bijective φ ∧
+  ∀ n : ℤ/8ℤ, φ (n + 1) = tick (φ n) := by
+  sorry -- This would require constructing the isomorphism
 
 /-- J creates a Z/2Z symmetry -/
--- theorem J_symmetry {α : Type*} [LedgerWorld α] :
---   ∃ (ψ : ℤ/2ℤ → α → α), ψ 0 = id ∧ ψ 1 = J ∧
---   ∀ n : ℤ/2ℤ, ψ (n + n) = id := by
---   admit
+theorem J_symmetry {α : Type*} [LedgerWorld α] :
+  ∃ (ψ : ℤ/2ℤ → α → α), ψ 0 = id ∧ ψ 1 = J ∧
+  ∀ n : ℤ/2ℤ, ψ (n + n) = id := by
+  use fun n => if n = 0 then id else J
+  constructor
+  · simp
+  constructor
+  · simp
+  · intro n
+    by_cases h : n = 0
+    · simp [h]
+    · have h_one : n = 1 := by
+        have h_fin : n.val < 2 := n.val_lt
+        have h_ne_zero : n.val ≠ 0 := by
+          intro h_eq
+          have h_eq_zero : n = 0 := ZMod.int_coe_eq_int_coe_iff.mp (by simp [h_eq])
+          exact h h_eq_zero
+        interval_cases n.val
+        · contradiction
+        · rfl
+      simp [h_one, J_involution]
 
 /-- Measurement recognition complexity for any input -/
 def measurement_recognition_complexity (n : ℕ) : ℕ := n
@@ -127,29 +147,28 @@ theorem recognition_science_correction :
   exact h_pos
 
 /-- The cost function is monotonic under tick -/
--- theorem cost_monotonic {α : Type*} [LedgerWorld α] :
---   ∀ a : α, cost a ≤ cost (tick a) := by
---   intro a
---   admit
+theorem cost_monotonic {α : Type*} [LedgerWorld α] :
+  ∀ a : α, cost a ≤ cost (tick a) := by
+  intro a
+  sorry -- This follows from A3 positivity and the fact that tick creates new recognition
 
 /-- The inner product makes α into a pre-Hilbert space -/
--- instance [LedgerWorld α] : InnerProductSpace ℝ α where
---   inner := inner
---   norm_sq_eq_inner := by
---     intro x
---     simp [norm_sq]
---     have h_pos := inner_pos_def x
---     exact h_pos.1
---   conj_symm := by
---     intro x y
---     simp [starRingEnd_apply]
---     exact inner_symm x y
---   add_left := by
---     intro x y z
---     admit
---   smul_left := by
---     intro r x y
---     admit
--/
+instance [LedgerWorld α] : InnerProductSpace ℝ α where
+  inner := inner
+  norm_sq_eq_inner := by
+    intro x
+    simp [norm_sq]
+    have h_pos := inner_pos_def x
+    exact h_pos.1
+  conj_symm := by
+    intro x y
+    simp [starRingEnd_apply]
+    exact inner_symm x y
+  add_left := by
+    intro x y z
+    sorry -- This would require defining addition on α
+  smul_left := by
+    intro r x y
+    sorry -- This would require defining scalar multiplication on α
 
 end PvsNP
