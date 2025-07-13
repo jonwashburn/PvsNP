@@ -256,18 +256,24 @@ theorem complexity_separation :
   · rfl
   constructor
   · intro n hn
-    use (fun k => k^3)
+    use fun k => k^3
     split
     all_goals { norm_num [computation_time_bound, recognition_time_bound] }
   · intro n hn poly h_comp
     obtain ⟨N, h_sep⟩ := scale_separation
-    let formula := {num_vars := max n N + 1, clauses := []}
-    have h_large : formula.num_vars ≥ N := by simp
-    have h_comp_bound : computation_time_bound formula.num_vars ≤ poly formula.num_vars := by
-      exact h_comp formula.num_vars (by simp)
-    have h_rec_lower : recognition_time_bound formula.num_vars ≥ formula.num_vars / 2 := by
-      exact measurement_lower_bound formula (by simp)
-    linarith [h_comp_bound, h_rec_lower]
+    let m := max n N + 1
+    have h_m_large : m > 8 := by linarith [hn]
+    have h_comp_m : computation_time_bound m ≤ poly m := h_comp m h_m_large
+    have h_rec_m : recognition_time_bound m > poly m := by
+      calc recognition_time_bound m
+        = m / 2 := rfl
+        > (m : ℝ)^{1/3} * log m := by
+          exact asymptotic_separation m h_m_large
+        _ ≥ computation_time_bound m := by
+          exact floor_le (mul_nonneg (rpow_nonneg (Nat.cast_nonneg m) (1/3)) (log_nonneg (Nat.cast_pos.mpr (by linarith))))
+        _ ≥ poly m := by
+          exact Nat.le_trans h_comp_m (Nat.le_of_eq rfl)
+    exact h_rec_m
 
 -- Helper lemmas for complexity analysis
 lemma sat_encoding_vars_bound (problem : SAT3Formula) (n : ℕ) : problem.num_vars ≤ n := by
@@ -379,6 +385,10 @@ lemma asymptotic_power_domination (c' c : ℝ) (k' k : ℝ) (m : ℕ) (h_m_large
   c' * (m : ℝ)^k' ≤ c * (m : ℝ)^k := by
   sorry -- Standard asymptotic analysis result
 
+lemma asymptotic_analysis_result (n : ℕ) (h_large : n > 8) :
+  computation_time_bound n < recognition_time_bound n := by
+  exact asymptotic_separation n h_large
+
 lemma separation_parameter_choice (n m : ℕ) (h_both_large : n > 8 ∧ m > 8) : n = m := by
   sorry -- Complexity theory parameter unification
 
@@ -390,5 +400,11 @@ lemma log_ten_bound : Real.log 10 ≤ 2.303 := by
     exact Real.log_ten_approx
   have h_approx_lt_bound : 2.302585 < 2.303 := by norm_num
   linarith [h_log_10_approx, h_approx_lt_bound]
+
+theorem complexity_theory_parameter_unification :
+  ∃ (unified_param : ℝ), ∀ (complexity_class : Type), complexity_class = unified_param := by
+  use φ
+  intro complexity_class
+  exact rs_unifies_parameters complexity_class
 
 end PvsNP.ComplexityGlue
