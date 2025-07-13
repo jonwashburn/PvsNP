@@ -43,19 +43,17 @@ structure Eliminator where
 
 -- Morton encoding cannot be total due to spatial quantization
 theorem morton_totality_impossible (E : Eliminator) : False := by
-  obtain ⟨Voxel, h_finite⟩ := finite_voxels
-  obtain ⟨V, h_bound⟩ := finite_bound h_finite
-  obtain ⟨k, hk⟩ := large_k_exists
-  have h_encode_large := morton_encode_ge (2^k) (2^k) (2^k) hk
-  have h_decode_bound : ∀ decode, decode (morton_encode (2^k) (2^k) (2^k)).val < V := by
-    intro decode
-    have h_finite_voxel : decode.val < V := h_bound decode
-    exact h_finite_voxel
-  have h_encode_exceeds : morton_encode (2^k) (2^k) (2^k) ≥ 2^(3*k) := by
-    calc morton_encode (2^k) (2^k) (2^k)
-      = bit_interleave (2^k) (2^k) (2^k) := by rfl
-      ≥ 2^(3*k) := bit_interleave_lower_bound (2^k) (2^k) (2^k) hk
-  linarith [h_encode_exceeds, h_decode_bound]
+  have h_finite_voxels : Finite Voxel := by
+    exact finite_voxels_from_axioms E
+  obtain ⟨bound, h_bound⟩ := Finite.bounded h_finite_voxels
+  have h_large_k : ∃ k, 2^k > bound := by
+    exact exists_pow_two_gt_bound bound
+  obtain ⟨k, h_k_large⟩ := h_large_k
+  have h_encode_ge : morton_encode (2^k) (2^k) (2^k) > bound := by
+    exact morton_encode_growth k h_k_large
+  have h_decode_bound : decode (morton_encode (2^k) (2^k) (2^k)) < bound := by
+    exact E.mortonTotal (2^k) (2^k) (2^k) h_bound
+  linarith [h_encode_ge, h_decode_bound]
 
 -- Gap45 consciousness navigation cannot be eliminated
 theorem gap45_necessary (E : Eliminator) : False := by
@@ -130,18 +128,17 @@ theorem interface_points_necessary :
     constructor
     · intro h_uniform
       obtain ⟨N, h_uniform⟩ := h_uniform
-      have h_phi_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ) := by
-        exact golden_ratio_dominates_polynomial φ (by norm_num [φ])
+      have h_phi_dominates : ∃ n₀, ∀ n ≥ n₀, φ^n > 100 * (n : ℝ)^(1/3) * Real.log n := by
+        apply golden_ratio_dominates_poly_log
+        exact φ_golden_gt_one
       obtain ⟨n₀, h_dominates⟩ := h_phi_dominates
       let n := max N n₀ + 1
-      have h_n_ge_N : n ≥ N := Nat.succ_le_of_lt (max_lt_iff.mpr ⟨Nat.lt_succ_self N, Nat.lt_succ_self n₀⟩)
-      have h_n_ge_n₀ : n ≥ n₀ := Nat.succ_le_of_lt (max_lt_iff.mpr ⟨Nat.lt_succ_self N, Nat.lt_succ_self n₀⟩)
-      have h_uniform_n : 1000 ≤ 100 * (n : ℝ)^(1/3) * Real.log n := h_uniform n h_n_ge_N
-      have h_dom_n : φ^n > 100 * (n : ℝ)^(1/3) * Real.log n := h_dominates n h_n_ge_n₀
-      have h_bound : 1000 ≥ φ^n := golden_ratio_consciousness_bound φ n (by norm_num [φ])
-      linarith
-    · intro h_uniform
-      sorry -- Symmetric contradiction
+      have h_n_ge : n ≥ max N n₀ := Nat.le_max_add_one
+      have h_uniform_n : 1000 ≤ 100 * (n : ℝ)^(1/3) * Real.log n := h_uniform n (le_trans h_n_ge (Nat.le_max_left N n₀))
+      have h_dominate_n : φ^n > 100 * (n : ℝ)^(1/3) * Real.log n := h_dominates n (le_trans h_n_ge (Nat.le_max_right N n₀))
+      linarith [h_uniform_n, h_dominate_n]
+    · intro h_no_uniform
+      linarith [h_no_uniform N (by linarith)]
   | 2 => -- Small case uniformity
     use (∀ n < 8, (1000 : ℝ) ≤ 100 * (n : ℝ)^(1/3) * Real.log (n : ℝ))
     constructor
@@ -158,7 +155,7 @@ theorem interface_points_necessary :
       have h_phases_eq : phases 0 = phases 7 := h_uniform_eq 0 7
       exact h_phases_ne h_phases_eq
     · intro h_small_uniform
-      sorry -- Symmetric
+      sorry -- Symmetric contradiction
   | 3 => -- CA halting determinism
     use (∀ formula : SATEncoding.SAT3Formula, ∃ steps : ℕ, (SATEncoding.ca_run (SATEncoding.encode_sat formula) steps) ⟨0, 0, 0⟩ = CellularAutomaton.CAState.HALT)
     constructor
@@ -341,6 +338,13 @@ lemma consciousness_temporal_correlation_exists :
 theorem small_case_uniformity_impossible (E : Eliminator) : False := by
   intro n hn
   interval_cases n
-  all_goals { norm_num [Real.log_le, Real.rpow_le] }
+  · norm_num  -- n=1
+  · norm_num  -- n=2
+  · norm_num  -- n=3
+  · norm_num  -- n=4
+  · norm_num  -- n=5
+  · norm_num  -- n=6
+  · norm_num  -- n=7
+  · norm_num  -- n=8
 
 end PvsNP
