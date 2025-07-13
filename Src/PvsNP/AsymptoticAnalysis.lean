@@ -405,23 +405,32 @@ lemma floor_computation_bound_strict (n : ℕ) (h_n_ge_10 : n ≥ 10) : Nat.floo
           have h_increase : ( (m+1) : ℝ)^(1/3) * log (m+1) < (m : ℝ)^(1/3) * log m + 1 := by
             -- The function x^{1/3} log x increases less than 1 per step for m ≥ 10
             let f (x : ℝ) := x^(1/3) * Real.log x
-            have hf_diff : Differentiable ℝ f := sorry -- Prove differentiability
+            have hf_diff : Differentiable ℝ f :=
+              (differentiable_rpow_const (1/3) (Or.inr (by norm_num))).mul
+              differentiable_log
             have h_f_prime_bound : ∀ x ≥ 10, deriv f x < 1 := by
               intro x h_x_ge_10
               simp [deriv, f]
-              have h_deriv : deriv f x = (1/3) * x^(-2/3) * log x + x^(-2/3) := sorry -- Compute derivative
+              have h_deriv : deriv f x = (1/3) * x^(-2/3) * log x + x^(-2/3) := by
+                rw [deriv_mul, deriv_rpow_const, deriv_log']
+                · field_simp
+                  ring
+                · exact differentiable_rpow_const (1/3) (Or.inr (by norm_num))
+                · exact differentiable_log
               rw [h_deriv]
-              have h_log_bound : log x ≤ x^(1/6) := sorry -- log x grows slower than any positive power
+              have h_log_bound : log x ≤ x^(1/6) := by
+                exact Real.log_le_rpow_self_one_six x (by linarith [h_x_ge_10])
               calc (1/3) * x^(-2/3) * log x + x^(-2/3)
                 ≤ (1/3) * x^(-2/3) * x^(1/6) + x^(-2/3) := by
                   apply add_le_add_right
-                  apply mul_le_mul_of_nonneg_left h_log_bound (by norm_num * x^(-2/3) ≥ 0)
-                _ = (1/3) * x^(-1/2) + x^(-2/3) := by ring; rw [← rpow_add]
+                  apply mul_le_mul_of_nonneg_left h_log_bound (by apply rpow_nonneg_of_nonneg; linarith)
+                _ = (1/3) * x^(-1/2) + x^(-2/3) := by
+                  rw [← rpow_add (by linarith)]; ring
                 _ < 1 := by
-                  exact derivative_bound_less_one x h_x_ge_10
-            obtain ⟨c, hc_int, h_mvt⟩ := exists_deriv_eq_slope f hf_diff (by norm_num) (by norm_num)
+                  apply derivative_expr_lt_one x h_x_ge_10
+            obtain ⟨c, hc_int, h_mvt⟩ := exists_deriv_eq_slope f hf_diff (by linarith) (by linarith)
             rw [h_mvt]
-            exact mul_lt_one_of_lt_one (h_f_prime_bound c hc_int.left) (by norm_num)
+            exact lt_of_le_of_lt (mul_le_mul_of_nonneg_right (h_f_prime_bound c (by linarith)) (by norm_num)) (by norm_num)
           linarith
         · push_neg at h_m_ge_10
           interval_cases m
