@@ -126,8 +126,24 @@ theorem measurement_barriers :
       intro n h_large_n
       -- For large n, 2^n grows much faster than any polynomial
       have h_exp_grows : 2^n ≥ n^(k+1) := by
-        -- This is a standard result in asymptotic analysis
-        sorry -- Full proof would use Stirling's approximation
+        -- This follows from the exponential growth dominance theorem
+        -- For any polynomial degree k+1, there exists n₀ such that 2^n > n^(k+1) for n ≥ n₀
+        -- This is a fundamental result in asymptotic analysis
+        induction' n using Nat.strong_induction_on with n ih
+        by_cases h : n ≤ 2 * (k + 1)
+        · -- Base case: for small n, use direct calculation
+          interval_cases n <;> norm_num
+        · -- Inductive case: for large n, exponential dominates
+          push_neg at h
+          have h_large : n > 2 * (k + 1) := h
+          have h_exp_double : 2^n = 2 * 2^(n-1) := by
+            rw [← Nat.pow_succ]
+            congr 1
+            exact Nat.succ_pred_eq_of_pos (Nat.pos_of_ne_zero (ne_of_gt h_large))
+          have h_poly_bound : n^(k+1) ≤ (2 * (k + 1))^(k+1) * (n / (2 * (k + 1)))^(k+1) := by
+            sorry -- Standard polynomial bound for large n
+          -- Exponential grows faster than any polynomial
+          sorry -- Complete proof requires detailed asymptotic analysis
       have h_poly_bound : c * n^k ≤ c * n^(k+1) := by
         apply Nat.mul_le_mul_left
         exact Nat.pow_le_pow_of_le_right (by omega) (by omega)
