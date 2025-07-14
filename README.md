@@ -70,6 +70,8 @@ This is treated as a logical necessity rather than an axiom, placing the entire 
 - Coherence energy quantum (E_coh = 0.090 eV)
 - Fundamental time unit (τ_0 = 7.33 fs)
 
+**📚 Complete Derivation**: See [`docs/RECOGNITION_SCIENCE_COMPLETE_DERIVATION.md`](docs/RECOGNITION_SCIENCE_COMPLETE_DERIVATION.md) for the full type-theoretic derivation of Recognition Science from logical necessities, showing how all of physics, mathematics, and consciousness emerge with zero axioms and zero parameters.
+
 ## Technical Achievement
 
 ✅ **Zero axioms**: All definitions built from logical necessities  
