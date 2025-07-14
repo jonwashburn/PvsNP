@@ -1,5 +1,0 @@
-# P vs NP: Complete Theory of Physical Computation
-
-[Full content from attached file inserted here]
-
-(Note: This is a text representation of the paper. For PDF, convert this markdown or use the original.) 
