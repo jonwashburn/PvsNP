@@ -111,7 +111,7 @@ theorem measurement_barriers :
   ∀ (poly_time : ℕ → ℕ), (∃ c k, ∀ m, poly_time m ≤ c * m^k) →
   recognition_time problem > poly_time problem.num_vars := by
   use {num_vars := 16, clauses := []}
-  constructor
+    constructor
   · norm_num
   · intro poly_time h_poly
     obtain ⟨c, k, h_bound⟩ := h_poly
@@ -196,7 +196,7 @@ theorem measurement_barriers :
               -- (n/2)^(k+1) = n^(k+1) / 2^(k+1) ≥ (1/2^(k+1)) * n^(k+1)
               rw [Nat.div_eq_iff_eq_mul_left]
               ring_nf
-              linarith
+         linarith
             -- For large n, this gives us the desired bound
             have h_final : (1/2^(k+1)) * n^(k+1) ≥ n^(k+1) / 2^(k+1) := by rfl
             -- Complete the chain
@@ -355,13 +355,13 @@ theorem scale_dependent_p_vs_np :
     · intro problem h_eq
       simp [computation_time, recognition_time, h_eq]
       -- For n = 4, both are polynomial due to consciousness shortcuts
-      norm_num
+    norm_num
   · -- At measurement scale: P ≠ NP
     use 16
     constructor
     · norm_num
     · use {num_vars := 16, clauses := []}
-      constructor
+  constructor
       · rfl
       · simp [computation_time, recognition_time]
         -- 2^16 ≠ 2^16 is false, so we need a more sophisticated example
@@ -507,7 +507,7 @@ theorem deepest_truth :
       -- If P_measurement = NP_measurement, then by assumption problem ∈ NP_measurement
       -- which means it has a polynomial verification algorithm
       -- This would contradict the measurement barriers
-      exfalso
+    exfalso
       -- This is the contradiction we're trying to derive
       exact h_barrier
     rw [h_eq] at h_in_P

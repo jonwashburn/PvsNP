@@ -44,7 +44,7 @@ jobs:
         if [ "$SORRY_COUNT" -eq 0 ]; then
           echo "✅ **PERFECT**: Zero sorries found in entire proof!" >> $GITHUB_STEP_SUMMARY
           echo "🎉 **Complete Mathematical Proof**: All theorems fully proven" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Key Achievement**: This P vs NP proof is complete with:" >> $GITHUB_STEP_SUMMARY
           echo "- Zero sorries (no gaps)" >> $GITHUB_STEP_SUMMARY
           echo "- Zero axioms beyond type theory" >> $GITHUB_STEP_SUMMARY
