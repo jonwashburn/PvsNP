@@ -27,32 +27,21 @@ else
 fi
 echo
 
-# Step 2: Check for sorries in main proof files
+# Step 2: Check for sorries in all source files
 echo "Step 2: Checking for remaining sorries..."
-SORRY_COUNT=$(find Src -name "*.lean" -exec grep -Hn "sorry" {} \; | grep -v "^[^:]*:[0-9]*:--" | grep -v "BigO.lean" | wc -l)
+SORRY_COUNT=$(find Src -name "*.lean" -exec grep -Hn "sorry" {} \; | grep -v "^[^:]*:[0-9]*:--" | wc -l)
 
 if [ "$SORRY_COUNT" -eq 0 ]; then
-    echo "✅ No sorries found in main proof files"
+    echo "✅ PERFECT: No sorries found in any source files"
 else
-    echo "❌ Found $SORRY_COUNT sorries in main proof files:"
-    find Src -name "*.lean" -exec grep -Hn "sorry" {} \; | grep -v "^[^:]*:[0-9]*:--" | grep -v "BigO.lean"
+    echo "❌ Found $SORRY_COUNT sorries in source files:"
+    find Src -name "*.lean" -exec grep -Hn "sorry" {} \; | grep -v "^[^:]*:[0-9]*:--"
     exit 1
 fi
 echo
 
-# Step 3: Check for the one acceptable sorry in helper file
-echo "Step 3: Checking helper file sorries..."
-HELPER_SORRY_COUNT=$(find Src -name "BigO.lean" -exec grep -Hn "sorry" {} \; | grep -v "^[^:]*:[0-9]*:--" | wc -l)
-
-if [ "$HELPER_SORRY_COUNT" -eq 1 ]; then
-    echo "✅ Found expected 1 sorry in helper file (standard mathematical fact)"
-else
-    echo "⚠️  Expected 1 sorry in helper file, found $HELPER_SORRY_COUNT"
-fi
-echo
-
-# Step 4: Verify key theorem files exist and compile
-echo "Step 4: Verifying key theorem files..."
+# Step 3: Verify key theorem files exist and compile
+echo "Step 3: Verifying key theorem files..."
 KEY_FILES=(
     "Src/PvsNP/MainTheorem.lean"
     "Src/PvsNP/DeepestTruth.lean"
