@@ -6,6 +6,14 @@ package «PvsNPProof» where
   leanOptions := #[
     ⟨`autoImplicit, false⟩
   ]
+  -- Add build caching and optimization options
+  buildArchive? := none
+  buildType := BuildType.release
+  -- Disable problematic features
+  moreLeanArgs := #[
+    "--tstack=100000",
+    "--threads=4"
+  ]
 
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4" @ "v4.12.0"

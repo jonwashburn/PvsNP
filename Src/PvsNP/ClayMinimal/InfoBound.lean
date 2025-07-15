@@ -12,7 +12,6 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Logic.Function.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Log
-import Mathlib.Algebra.BigOperators.Basic
 
 namespace PvsNP.ClayMinimal
 
@@ -59,7 +58,24 @@ theorem balanced_hamming_distance (n : ℕ) (h_even : Even n) :
   (code0.zip code1).count (fun pair => pair.1 ≠ pair.2) = n := by
   -- The two balanced codes differ in exactly n positions
   unfold balanced_encoding
-  simp [List.zip_replicate]
+  simp only [List.zip_replicate]
+  -- code0 = [true, true, ..., false, false, ...]
+  -- code1 = [false, false, ..., true, true, ...]
+  -- They differ in all n positions
+  have h_half : n / 2 + n / 2 = n := Nat.div_add_mod n 2 ▸ (Even.mod_two_eq_zero h_even)
+  -- For now, use the fact that the codes differ in all positions
+  -- This is a basic counting argument
+  have h_length : (List.replicate (n / 2) true ++ List.replicate (n / 2) false).length = n := by
+    simp [List.length_replicate, List.length_append]
+    exact h_half
+  -- The two codes are complements of each other
+  have h_diff : ∀ i : ℕ, i < n →
+    (List.replicate (n / 2) true ++ List.replicate (n / 2) false)[i]! ≠
+    (List.replicate (n / 2) false ++ List.replicate (n / 2) true)[i]! := by
+    intro i hi
+    simp [List.getElem_replicate, List.getElem_append]
+    split_ifs <;> simp
+  -- Since they differ at all positions, the count is n
   sorry
 
 -- Key lemma: Balanced codes require many queries to distinguish

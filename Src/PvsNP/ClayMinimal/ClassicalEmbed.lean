@@ -7,8 +7,7 @@
 -/
 
 import Mathlib.Computability.TuringMachine
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Nat.Pow
+import Mathlib.Data.Nat.Defs
 import Mathlib.Logic.Function.Basic
 import Mathlib.Data.Finset.Basic
 
@@ -60,7 +59,29 @@ def decode_sat_instance (bits : List Bool) : SATInstance :=
 theorem encoding_size_bound (sat : SATInstance) :
   (encode_sat_instance sat).length ≤ polyBound 2 (sat.num_vars + sat.num_clauses) := by
   -- The encoding uses O((n+m)^2) bits
-  sorry
+  unfold encode_sat_instance polyBound
+  -- The encoding consists of:
+  -- 1. var_bits: log₂(num_vars) bits ≤ num_vars bits
+  -- 2. clause_bits: log₂(num_clauses) bits ≤ num_clauses bits
+  -- 3. clause_encoding: bounded by total literals
+  have h_var_bits : (Nat.digits 2 sat.num_vars).length ≤ sat.num_vars := by
+    apply Nat.digits_length_le
+    norm_num
+  have h_clause_bits : (Nat.digits 2 sat.num_clauses).length ≤ sat.num_clauses := by
+    apply Nat.digits_length_le
+    norm_num
+  -- Total length is bounded by sum of parts
+  have h_total : (Nat.digits 2 sat.num_vars ++ Nat.digits 2 sat.num_clauses ++
+    sat.clauses.bind (fun clause => clause.bind (fun literal => Nat.digits 2 literal.natAbs))).length ≤
+    sat.num_vars + sat.num_clauses + sat.num_vars * sat.num_clauses := by
+    simp [List.length_append, List.length_bind]
+    omega
+  -- This is ≤ (n+m)²
+  have h_square : sat.num_vars + sat.num_clauses + sat.num_vars * sat.num_clauses ≤
+    (sat.num_vars + sat.num_clauses) ^ 2 := by
+    ring_nf
+    omega
+  omega
 
 -- Minimal computational model with separation
 structure ComputationModel where
@@ -148,7 +169,18 @@ theorem information_capacity_octave_bound (n : ℕ) :
   -- This gives us a bound on total time
   have h_total_bound : model.compute_time sat + model.recognize_time sat ≤ 8 * 8 := by
     -- From octave_cycles definition and bound
-    sorry
+    -- octave_cycles = (total_time / 8) + 1 ≤ 8
+    -- So total_time / 8 ≤ 7, which means total_time ≤ 56
+    -- We use 64 = 8 * 8 as a looser bound for simplicity
+    have h_div_bound : (model.compute_time sat + model.recognize_time sat) / 8 + 1 ≤ 8 := h_cycles
+    have h_div_le : (model.compute_time sat + model.recognize_time sat) / 8 ≤ 7 := by omega
+    -- If a / 8 ≤ 7, then a ≤ 56, and 56 ≤ 64
+    have h_total_le : model.compute_time sat + model.recognize_time sat ≤ 56 := by
+      -- Use the fact that division rounds down
+      rw [Nat.div_le_iff] at h_div_le
+      · exact h_div_le
+      · norm_num
+    omega
   -- Recognition time is part of total time
   have h_rec_bound : model.recognize_time sat ≤ model.compute_time sat + model.recognize_time sat := by
     omega
