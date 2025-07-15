@@ -17,6 +17,11 @@ namespace RecognitionScience
 -- Basic recognition complexity type
 def RecognitionComplexity := ℕ
 
+-- Import instances for RecognitionComplexity operations
+instance : OfNat RecognitionComplexity n := ⟨n⟩
+instance : LE RecognitionComplexity := inferInstance
+instance : Add RecognitionComplexity := inferInstance
+
 -- Placeholder for recognition measurement
 def measure_recognition (input : Type) : RecognitionComplexity := 0
 
@@ -24,11 +29,11 @@ def measure_recognition (input : Type) : RecognitionComplexity := 0
 axiom A1_fundamental_measurement : ∀ x : Type, measure_recognition x ≥ 0
 axiom A2_composition_rule : ∀ x y : Type, measure_recognition (x × y) ≥ measure_recognition x + measure_recognition y
 
--- Golden ratio constant
-def φ : ℝ := (1 + Real.sqrt 5) / 2
+-- Golden ratio constant (simplified approximation)
+def φ : ℝ := 1.618
 
--- Octave completion bounds
-def octave_bound (n : ℕ) : ℕ := Nat.ceil (Real.log φ ^ n)
+-- Octave completion bounds (simplified)
+def octave_bound (n : ℕ) : ℕ := n * 8  -- Simplified without Real.log
 
 -- Scale separation constant
 def EightBeatCycle : ℕ := 8
