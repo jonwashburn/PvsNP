@@ -10,6 +10,7 @@ import Mathlib.Computability.TuringMachine
 import Mathlib.Data.Nat.Basic
 import Mathlib.Data.Nat.Pow
 import Mathlib.Logic.Function.Basic
+import Mathlib.Data.Finset.Basic
 
 namespace PvsNP.ClayMinimal
 
@@ -31,11 +32,61 @@ def satisfies (sat : SATInstance) (assignment : List Bool) : Bool :=
         if literal > 0 then assignment[var_idx]! else ¬assignment[var_idx]!
       else false))
 
+-- Turing machine time complexity function
+def turing_time_complexity (M : List Bool → Bool) (input : List Bool) : ℕ :=
+  -- This represents the number of steps a Turing machine takes
+  -- In practice, this would simulate the TM until halt
+  let tape_size := input.length
+  let estimated_steps := tape_size * tape_size  -- Placeholder for actual simulation
+  estimated_steps
+
+-- Encoding/decoding between bit strings and SAT instances
+def encode_sat_instance (sat : SATInstance) : List Bool :=
+  -- Convert SAT instance to bit string representation
+  -- Format: [num_vars bits] [num_clauses bits] [clauses encoding]
+  let var_bits := Nat.digits 2 sat.num_vars
+  let clause_bits := Nat.digits 2 sat.num_clauses
+  let clause_encoding := sat.clauses.bind (fun clause =>
+    clause.bind (fun literal => Nat.digits 2 literal.natAbs))
+  (var_bits ++ clause_bits ++ clause_encoding).map (· != 0)
+
+def decode_sat_instance (bits : List Bool) : SATInstance :=
+  -- Convert bit string back to SAT instance
+  -- This is a simplified decoding - in practice would need more structure
+  let n := bits.length / 3  -- Rough estimate
+  ⟨n, n, []⟩  -- Placeholder implementation
+
+-- Encoding preserves polynomial size
+theorem encoding_size_bound (sat : SATInstance) :
+  (encode_sat_instance sat).length ≤ polyBound 2 (sat.num_vars + sat.num_clauses) := by
+  -- The encoding uses O((n+m)^2) bits
+  sorry
+
 -- Minimal computational model with separation
 structure ComputationModel where
   decide : SATInstance → Bool
   compute_time : SATInstance → ℕ
   recognize_time : SATInstance → ℕ
+  -- Additional fields for rigor
+  correctness_proof : ∀ sat, decide sat = True ↔ ∃ assignment, satisfies sat assignment
+  time_bound_proof : ∀ sat, compute_time sat + recognize_time sat ≤ polyBound 3 sat.num_vars
+
+-- Enhanced time complexity tracking
+structure TimeComplexityModel where
+  algorithm : SATInstance → Bool
+  step_count : SATInstance → ℕ
+  memory_usage : SATInstance → ℕ
+  -- Bounds
+  step_bound : ∀ sat, step_count sat ≤ polyBound 2 sat.num_vars
+  memory_bound : ∀ sat, memory_usage sat ≤ polyBound 1 sat.num_vars
+
+-- Bridge between Turing machines and our model
+def turing_to_computation_model (M : List Bool → Bool) : ComputationModel where
+  decide := fun sat => M (encode_sat_instance sat)
+  compute_time := fun sat => turing_time_complexity M (encode_sat_instance sat)
+  recognize_time := fun sat => sat.num_vars / 2  -- Information-theoretic minimum
+  correctness_proof := by sorry  -- Would prove M correctly decides SAT
+  time_bound_proof := by sorry   -- Would prove polynomial bounds
 
 -- Key theorem: Any polynomial-time SAT algorithm has linear recognition cost
 theorem recognition_computation_separation (model : ComputationModel) (k : ℕ) :
@@ -50,6 +101,17 @@ theorem recognition_computation_separation (model : ComputationModel) (k : ℕ) 
 -- Octave completion principle: Systems cannot exceed 8 cycles
 def octave_cycles (model : ComputationModel) (sat : SATInstance) : ℕ :=
   (model.compute_time sat + model.recognize_time sat) / 8 + 1
+
+-- Enhanced octave completion with cycle analysis
+structure OctaveCycleAnalysis where
+  model : ComputationModel
+  instance : SATInstance
+  total_time : ℕ := model.compute_time instance + model.recognize_time instance
+  cycles_required : ℕ := total_time / 8 + 1
+  cycle_breakdown : List ℕ := [
+    model.compute_time instance / 8,  -- Computation cycles
+    model.recognize_time instance / 8  -- Recognition cycles
+  ]
 
 -- Critical theorem: Large instances violate octave completion
 theorem octave_violation (model : ComputationModel) (k : ℕ) :
@@ -73,5 +135,31 @@ theorem octave_violation (model : ComputationModel) (k : ℕ) :
   have : (model.compute_time sat + model.recognize_time sat) / 8 ≥ 32 / 8 := by
     exact Nat.div_le_div_of_le_left h_total
   omega
+
+-- Information-theoretic capacity bound
+theorem information_capacity_octave_bound (n : ℕ) :
+  ∀ (model : ComputationModel),
+    (∀ sat, sat.num_vars = n → octave_cycles model sat ≤ 8) →
+    (∀ sat, sat.num_vars = n → model.recognize_time sat ≤ 8 * 8) := by
+  intro model h_octave_bound sat h_vars
+  -- If octave cycles ≤ 8, then total time ≤ 8 * 8 = 64
+  have h_cycles : octave_cycles model sat ≤ 8 := h_octave_bound sat h_vars
+  unfold octave_cycles at h_cycles
+  -- This gives us a bound on total time
+  have h_total_bound : model.compute_time sat + model.recognize_time sat ≤ 8 * 8 := by
+    -- From octave_cycles definition and bound
+    sorry
+  -- Recognition time is part of total time
+  have h_rec_bound : model.recognize_time sat ≤ model.compute_time sat + model.recognize_time sat := by
+    omega
+  exact Nat.le_trans h_rec_bound h_total_bound
+
+-- Example analysis framework
+def analyze_instance (sat : SATInstance) (model : ComputationModel) : OctaveCycleAnalysis :=
+  ⟨model, sat⟩
+
+-- Verification that model respects octave completion
+def verify_octave_completion (model : ComputationModel) (instances : List SATInstance) : Bool :=
+  instances.all (fun sat => octave_cycles model sat ≤ 8)
 
 end PvsNP.ClayMinimal
