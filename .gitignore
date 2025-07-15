@@ -1,24 +1,37 @@
 # Lean build artifacts
-build/
 .lake/
-lake-packages/
+build/
+*.olean
+*.ilean
+*.c
+*.o
 
-# OS generated files
+# macOS metadata files
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 
+# Backup files
+*~
+*.bak
+*.swp
+*.tmp
+
 # IDE files
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
+*.code-workspace
 
-# Backup files
-*.bak
-*.orig 
+# Log files
+*.log
+
+# Cache directories
+.cache/
+node_modules/
+
+# Temporary files
+temp/
+tmp/ 
