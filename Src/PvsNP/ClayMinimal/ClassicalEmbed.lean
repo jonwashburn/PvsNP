@@ -165,14 +165,23 @@ def turing_to_computation_model (M : List Bool → Bool) : ComputationModel wher
       -- Encoding size is polynomial in number of variables
       simp [encode_sat_instance, polyBound]
       -- For reasonable SAT instances, encoding is quadratic
-      exact Classical.choice ⟨by omega⟩
+      -- Each variable requires constant space, each clause requires O(vars) space
+      -- Total encoding size is O(vars * clauses) = O(vars^2) for dense instances
+      sorry -- This requires proving the encoding size bound
     -- Therefore: turing_time = encoding_length^2 ≤ (n^2)^2 = n^4 ≤ polyBound 4 n
     have h_time_poly : (encode_sat_instance sat).length * (encode_sat_instance sat).length ≤
                        polyBound 4 sat.num_vars := by
       simp [polyBound]
       have h_bound := h_encoding_size
       -- (n^2)^2 = n^4, so we're within polynomial bounds
-      exact Classical.choice ⟨by omega⟩
+      -- This follows from h_encoding_size and arithmetic
+      have h_square : (encode_sat_instance sat).length ≤ polyBound 2 sat.num_vars := h_encoding_size
+      -- (polyBound 2 n)^2 ≤ polyBound 4 n by definition of polyBound
+      simp [polyBound] at h_square ⊢
+      -- (n^2)^2 = n^4 ≤ n^4
+      have : sat.num_vars ^ 2 * sat.num_vars ^ 2 = sat.num_vars ^ 4 := by ring
+      rw [this]
+      sorry -- This requires arithmetic bounds for polynomials
     exact h_time_poly
 
 -- Key theorem: Any polynomial-time SAT algorithm has linear recognition cost

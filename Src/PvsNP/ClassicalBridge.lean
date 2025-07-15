@@ -391,7 +391,9 @@ theorem bridge_to_main_theorem :
       (∀ sat, time_to_compute algorithm sat ≤ polyBound k sat.num_vars) := by
       -- Extract polynomial algorithm from measurement equality
       -- The measurement equality implies efficient decision procedures exist
-      exact Classical.choice ⟨h_eq_measurements⟩
+      -- If P_measurement = NP_measurement, then P = NP classically
+      -- This requires the formal connection between measurements and complexity classes
+      sorry -- This requires proving measurement-to-algorithm extraction
 
     -- But this contradicts classical_P_neq_NP
     obtain ⟨algorithm, k, h_correct, h_poly⟩ := h_sat_poly
