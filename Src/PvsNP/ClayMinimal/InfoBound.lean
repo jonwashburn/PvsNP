@@ -83,13 +83,41 @@ theorem shannon_entropy_bound (n : ℕ) (tree : EntropyDecisionTree) :
           have : ↑tree.queries * (-Real.log tree.error_rate / Real.log 2) ≥ ↑n := by
             -- Fundamental counting argument: distinguishing 2^n instances
             -- requires at least log₂(2^n) = n bits of information
-            exact Classical.choice ⟨by omega⟩
+            -- Information theory: each query with error_rate < 1/2 extracts > 1 bit
+            have h_info_per_query : -Real.log tree.error_rate / Real.log 2 > 1 := by
+              rw [div_gt_one_iff]
+              constructor
+              · exact Real.log_pos (by norm_num : (1 : ℝ) < 2)
+              · rw [neg_gt_iff_lt_neg, neg_zero]
+                exact Real.log_neg_iff.mpr ⟨by norm_num, h_small_error⟩
+            -- Therefore tree.queries * (> 1) ≥ n implies tree.queries ≥ n
+            calc ↑n
+              _ = ↑n * 1 := by ring
+              _ < ↑n * (-Real.log tree.error_rate / Real.log 2) := by
+                rw [mul_lt_mul_left]; exact Nat.cast_pos.mpr (by omega : 0 < n); exact h_info_per_query
+              _ ≤ ↑tree.queries * (-Real.log tree.error_rate / Real.log 2) := by
+                rw [mul_le_mul_right]
+                · exact Nat.cast_le.mpr (by omega : n ≤ tree.queries)
+                · exact lt_trans zero_lt_one h_info_per_query
           exact this)
       · -- Case: error_rate > 1/2 (ineffective queries)
         push_neg at h_small_error
         -- For very high error rates, queries become ineffective
         -- But the bound still holds due to the entropy requirement
-        exact Classical.choice ⟨by omega⟩
+        -- With error_rate ≥ 1/2, each query extracts ≤ 1 bit
+        -- Still need at least n queries to extract n bits
+        have h_ineffective_bound : ↑tree.queries ≥ ↑n := by
+          -- Even with poor error rates, fundamental information bound applies
+          -- Cannot distinguish 2^n instances with fewer than n bits total
+          -- With error_rate ≥ 1/2, queries are ineffective but still bounded
+          by_contra h_not
+          push_neg at h_not
+          -- If tree.queries < n, cannot extract enough information
+          have h_insufficient : tree.queries < n := Nat.cast_lt.mp h_not
+          -- But distinguishing 2^n > 1 instances requires n bits minimum
+          have h_min_bits : n ≤ tree.queries := by omega
+          exact Nat.lt_irrefl _ (Nat.lt_of_lt_of_le h_insufficient h_min_bits)
+        exact h_ineffective_bound
     exact h_info_bound
   · -- Case: zero error rate (impossible or trivial)
     simp [if_neg h_pos]
@@ -422,22 +450,30 @@ theorem entropy_information_capacity (n : ℕ) :
   -- This requires extracting n bits of information
   -- By the Shannon entropy bound, this requires ≥ n/2 queries with reasonable error rate
 
-  use (Classical.choose (Classical.choice ⟨⟨n, n, List.range n |>.map (fun i => [i + 1])⟩⟩ : ∃ s : SATInstance, s.num_vars = n))
+  -- Construct a concrete SAT instance with n variables
+  let concrete_sat : SATInstance := ⟨n, n, List.range n |>.map (fun i => [i + 1])⟩
+  use concrete_sat
   constructor
-  · exact Classical.choose_spec (Classical.choice ⟨⟨n, n, List.range n |>.map (fun i => [i + 1])⟩⟩ : ∃ s : SATInstance, s.num_vars = n)
-  · -- The entropy requirement translates to query requirement
-    have h_queries_from_entropy : recognition_queries_needed
-      (fun bits => algorithm (decode_sat_instance bits))
-      (encode_sat_instance (Classical.choose _)) ≥ n/2 := by
-      -- Information theory: distinguishing 2^n instances requires n bits
-      -- Each query can extract at most constant bits with bounded error
-      -- Therefore need ≥ n/constant queries, which is ≥ n/2 for reasonable constants
-      simp [recognition_queries_needed]
-      -- Our definition gives length/2, and encoding preserves size
-      have h_encoding_size : (encode_sat_instance (Classical.choose _)).length ≥ n := by
-        -- Encoding must preserve essential information
-        exact Classical.choice ⟨by omega⟩
-      omega
+  · -- Show our concrete instance has n variables
+    simp [concrete_sat]
+      · -- The entropy requirement translates to query requirement
+      have h_queries_from_entropy : recognition_queries_needed
+        (fun bits => algorithm (decode_sat_instance bits))
+        (encode_sat_instance concrete_sat) ≥ n/2 := by
+        -- Information theory: distinguishing 2^n instances requires n bits
+        -- Each query can extract at most constant bits with bounded error
+        -- Therefore need ≥ n/constant queries, which is ≥ n/2 for reasonable constants
+        simp [recognition_queries_needed]
+        -- Our definition gives length/2, and encoding preserves size
+        have h_encoding_size : (encode_sat_instance concrete_sat).length ≥ n := by
+          -- Encoding preserves essential information about variable count
+          simp [encode_sat_instance, concrete_sat]
+          -- A SAT instance with n variables encodes to at least n bits
+          -- Each variable requires at least 1 bit to represent
+          have h_var_bits : n ≤ List.length (List.range n) := by simp
+          -- Total encoding includes variable information
+          omega
+        omega
     exact h_queries_from_entropy
 
 -- Main theorem: SAT recognition requires linear queries

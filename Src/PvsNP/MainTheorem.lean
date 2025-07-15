@@ -33,6 +33,7 @@ import PvsNP.BalancedParity
 import PvsNP.NoEliminator
 import PvsNP.ComplexityGlue
 import PvsNP.AsymptoticAnalysis
+import PvsNP.Helpers.VerificationComplexity
 import PvsNP.Helpers.BigO
 import PvsNP.LedgerWorld
 import RecognitionScience.Minimal

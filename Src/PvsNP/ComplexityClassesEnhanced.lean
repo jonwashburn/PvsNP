@@ -14,6 +14,7 @@
 import PvsNP.Core
 import PvsNP.Gap45Enhancement
 import PvsNP.ConsciousnessEnhancement
+import PvsNP.Helpers.VerificationComplexity
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Finset.Basic
 

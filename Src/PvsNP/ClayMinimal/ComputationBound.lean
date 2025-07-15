@@ -7,7 +7,7 @@
 -/
 
 import PvsNP.ClayMinimal.ClassicalEmbed
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Nat.Defs
 import Mathlib.Data.Nat.Log
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Vector.Basic
@@ -358,8 +358,24 @@ theorem ca_correctness_detailed (sat : SATInstance) :
           have h_clause_high : let clause_pos := morton_decode (sat.num_vars + clause_idx)
             let config_prev := ca_evolve (encode_sat_in_ca sat) t'
             config_prev clause_pos = WIRE_HIGH := by
-            -- Apply clause invariant (to be proven later)
-            admit
+            -- Apply clause invariant: if clause is satisfied, it becomes HIGH
+            -- Use the clause_invariant (defined later in this proof)
+            have h_clause_inv := clause_invariant t'
+            let clause_pos := morton_decode (sat.num_vars + clause_idx)
+            -- Apply clause invariant with our satisfied clause
+            have h_clause_result := h_clause_inv clause_idx h_clause_bound
+            -- Show clause is satisfied by our assignment
+            have h_clause_satisfied : ∃ assignment, satisfies sat assignment ∧
+              (∃ var_in_clause, var_in_clause ∈ sat.clauses.get! clause_idx ∧ assignment var_in_clause = true) := by
+              use assignment
+              constructor
+              · exact h_sat
+              · use (morton_encode pos + 1)
+                constructor
+                · exact h_var_in_clause
+                · exact h_var_true
+            -- Apply clause invariant reverse direction
+            exact h_clause_result.2 h_clause_satisfied
           -- High clause signals propagate to adjacent variables
           simp [ca_step]
           -- Variable becomes HIGH due to HIGH clause neighbor

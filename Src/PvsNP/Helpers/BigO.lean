@@ -1,7 +1,5 @@
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Nat.Pow
+import Mathlib.Data.Nat.Defs
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Omega
 
 /-- Helper lemmas for asymptotic analysis and growth rates -/
 

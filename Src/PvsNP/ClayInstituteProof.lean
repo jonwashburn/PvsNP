@@ -19,7 +19,7 @@ import PvsNP.ClayMinimal.InfoBound
 import PvsNP.ClayMinimal.ClassicalEmbed
 import PvsNP.LedgerWorld
 import Mathlib.Computability.TuringMachine
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Nat.Defs
 import Mathlib.Data.Real.Basic
 
 namespace PvsNP.ClayInstituteProof

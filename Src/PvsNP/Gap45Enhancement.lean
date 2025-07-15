@@ -16,7 +16,7 @@ import PvsNP.Core
 import PvsNP.LedgerWorld
 import RecognitionScience.Minimal
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Nat.Prime
+import Mathlib.Data.Nat.Prime.Basic
 
 namespace PvsNP.Gap45Enhancement
 
