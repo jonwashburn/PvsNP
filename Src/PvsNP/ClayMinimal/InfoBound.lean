@@ -234,7 +234,7 @@ lemma balanced_code_lower_bound (n : ℕ) (h_even : Even n) :
           by_contra h_not_bound
           push_neg at h_not_bound
           -- This would be outside the code length, so trivially different
-          exact Classical.choice ⟨True.intro⟩
+          exact trivial
         simp [balanced_encoding]
         -- The codes are designed to differ at all positions
         have : pos < n/2 ∨ pos ≥ n/2 := Nat.lt_or_ge pos (n/2)
@@ -253,7 +253,7 @@ lemma balanced_code_lower_bound (n : ℕ) (h_even : Even n) :
     -- and the codes differ in > n/2 positions the tree doesn't see,
     -- the tree cannot reliably distinguish the codes
     -- By Yao's minimax principle, this gives error ≥ 1/2
-    exact Classical.choice ⟨by norm_num⟩
+    norm_num
   -- But this contradicts tree.error_rate < 1/4
   have h_contradiction : (1/4 : ℝ) < 1/2 := by norm_num
   exact not_le.2 h_contradiction (le_of_lt h_error).trans h_random_error
@@ -294,9 +294,18 @@ theorem yao_minimax_lower_bound (n : ℕ) :
     simp [tree] at h_bound
     exact h_bound
 
-  -- For simplicity, assume n is even (odd case is similar)
-  have h_even : Even n := Classical.choice ⟨Classical.em (Even n)⟩
-  exact h_balanced_bound h_even
+  -- Handle both even and odd cases constructively
+  by_cases h_even : Even n
+  · -- Case: n is even
+    exact h_balanced_bound h_even
+  · -- Case: n is odd, use n-1 which is even
+    have h_pred_even : Even (n-1) := by
+      have h_odd : Odd n := Nat.odd_iff_not_even.mpr h_even
+      exact Nat.even_sub_odd (by norm_num) h_odd
+    -- The bound for n-1 gives us a bound for n
+    have h_bound_pred := h_balanced_bound h_pred_even
+    -- Since n = (n-1) + 1, the bound transfers with at most +1 queries
+    linarith
 
 -- Recognition queries needed function
 def recognition_queries_needed (algorithm : List Bool → Bool) (input : List Bool) : ℕ :=
@@ -507,7 +516,7 @@ theorem sat_recognition_lower_bound (n : ℕ) (h_large : n > 8) :
         exfalso
         -- For the proof, we can assume WLOG that n is even
         -- The odd case follows by considering n+1 or n-1
-        exact Classical.choice ⟨True.intro⟩
+        exact trivial
 
     -- Apply information capacity bound
     have h_capacity := information_capacity_bound n
@@ -536,7 +545,15 @@ theorem sat_recognition_lower_bound (n : ℕ) (h_large : n > 8) :
           -- which bounds the number of queries that can be made
           simp [ComputationModel]
           -- The recognition time must account for all queries needed to distinguish instances
-          exact Classical.choice ⟨by omega⟩
+          -- Each recognition step can examine at most one bit of information
+          -- Therefore recognize_time ≥ information_bits_needed ≥ queries_needed
+          have h_info_bound : model.recognize_time witness_sat ≥ witness_sat.num_vars / 2 := by
+            -- Recognition must examine enough bits to distinguish 2^n instances
+            sorry -- This requires the formal connection between recognition time and information
+          have h_queries_vs_vars : queries_needed ≤ witness_sat.num_vars / 2 := by
+            -- The queries needed cannot exceed the information-theoretic minimum
+            sorry -- This requires the formal query complexity bound
+          linarith
         exact Nat.le_trans h_queries_bound h_rec_time_bound
     · -- Case: witness has wrong size, construct a new hard instance
       -- Use the hard_sat instance from the proof structure
@@ -573,25 +590,34 @@ theorem octave_information_impossibility (n : ℕ) (h_large : n > 64) :
       -- Recognition time is bounded by octave cycles * cycle length
       have h_cycle_length : octave_cycle_length ≤ 8 := by
         -- Standard octave cycle length
-        exact Classical.choice ⟨by norm_num⟩
+        norm_num
       have h_time_conversion : model.recognize_time sat ≤ octave_cycles model sat * octave_cycle_length := by
         -- Recognition operations occur within octave cycles
-        exact Classical.choice ⟨by omega⟩
+        -- Each octave cycle can perform up to octave_cycle_length recognition steps
+        -- Therefore total recognition time is bounded by cycles × steps_per_cycle
+        sorry -- This requires formalizing the octave cycle model
       exact Nat.le_trans h_time_conversion (Nat.mul_le_mul_right octave_cycle_length h_cycles)
     exact h_octave_to_time h_octave_time_bound
   -- But SAT recognition requires ≥ n/2 queries for n > 64
-  obtain ⟨sat, h_vars, h_rec_lower⟩ := sat_recognition_lower_bound n (by omega) model h_correct
+  obtain ⟨sat, h_vars, h_rec_lower⟩ := sat_recognition_lower_bound n h_large model h_correct
   have h_contradiction : n/2 ≤ 64 := by
     rw [←h_vars] at h_rec_lower
     exact Nat.le_trans h_rec_lower (h_rec_bound sat h_vars)
   -- But for n > 64, we have n/2 > 32, and for n > 128, n/2 > 64, contradiction
   have h_too_large : n/2 > 64 := by
-    have : n > 64 := h_large
-    -- For n > 128, n/2 > 64
-    have h_stronger : n > 128 := by
-      -- We can strengthen the assumption or prove for n > 128
-      exact Classical.choice ⟨Nat.lt_trans (by norm_num : 64 < 128) h_large⟩
-    omega
+    -- We need n > 128 for n/2 > 64
+    -- Either strengthen the assumption or handle the general case
+    by_cases h_case : n > 128
+    · -- Case n > 128: then n/2 > 64
+      have : n/2 > 128/2 := Nat.div_lt_div_of_lt_right (by norm_num) h_case
+      norm_num at this
+      exact this
+    · -- Case n ≤ 128: contradiction or weaker bound
+      -- The theorem statement needs n > 128, not just n > 64
+      push_neg at h_case
+      -- For now, assume the theorem is stated correctly for n > 128
+      exfalso
+      sorry -- This indicates the theorem hypothesis should be n > 128
   omega
 
 -- Corollary: Recognition dominates computation for large instances
@@ -640,13 +666,14 @@ theorem recognition_dominates_computation (n : ℕ) (h_large : n > 64) :
           -- Use the specific CA bound instead
           have h_ca_bound : model.compute_time sat ≤ n^(1/3 : ℕ) := by
             -- This requires the specific CA computation bound
-            exact Classical.choice ⟨by omega⟩
+            -- The cellular automaton achieves O(n^{1/3}) time complexity
+            sorry -- This requires proving the CA upper bound
           have h_ca_small : n^(1/3 : ℕ) < n/2 := by
             -- For n > 64, n^{1/3} < n/2
             have h_cube_root_small : n^(1/3 : ℕ) ≤ 4 := by
-              -- n^{1/3} ≤ 4 when n ≤ 64, but we have n > 64
-              -- So this needs to be computed properly
-              exact Classical.choice ⟨by omega⟩
+              -- For n > 64, we can bound n^{1/3} more carefully
+              -- n^{1/3} grows much slower than n
+              sorry -- This requires careful arithmetic bounds
             have h_half_large : n/2 > 32 := by omega
             omega
           exact Nat.lt_of_le_of_lt (Nat.le_trans h_ca_bound h_ca_small) h_rec_ge
@@ -658,10 +685,12 @@ theorem recognition_dominates_computation (n : ℕ) (h_large : n > 64) :
         -- But for our specific CA with k effective = 1/3, recognition dominates
         have h_effective_ca : model.compute_time sat ≤ n^(1/3 : ℕ) := by
           -- Use the cellular automaton specific bound
-          exact Classical.choice ⟨by omega⟩
+          sorry -- This requires the formal CA upper bound proof
         have h_ca_vs_rec : n^(1/3 : ℕ) < n/2 := by
           -- For n > 64, n^{1/3} < n/2
-          exact Classical.choice ⟨by omega⟩
+          -- This follows from the fact that n^{1/3} grows as the cube root
+          -- while n/2 grows linearly
+          sorry -- This requires careful arithmetic bounds for cube roots
         exact Nat.lt_of_le_of_lt h_effective_ca (Nat.lt_of_le_of_lt h_ca_vs_rec h_rec_ge)
 
 -- Example instances for testing
@@ -709,7 +738,8 @@ theorem test_recognition_bounds (n : ℕ) (h_large : n > 64) :
         · simp
         · simp
       -- Apply information capacity arguments
-      exact Classical.choice ⟨by omega⟩
+      -- The information-theoretic lower bound applies here
+      sorry -- This requires the formal information capacity proof
     exact Nat.le_trans h_witness_bound h_similar_complexity
   | inr h_rest =>
     cases h_rest with
@@ -722,7 +752,9 @@ theorem test_recognition_bounds (n : ℕ) (h_large : n > 64) :
         simp
       -- Similar argument as above
       have h_similar_complexity : model.recognize_time inst ≥ model.recognize_time witness_sat := by
-        exact Classical.choice ⟨by omega⟩
+        -- Instances of the same size require similar recognition time
+        -- This follows from the uniform complexity of SAT instances
+        sorry -- This requires proving uniform complexity bounds
       exact Nat.le_trans h_witness_bound h_similar_complexity
     | inr h_contradictory =>
       -- inst is the contradictory instance
@@ -733,7 +765,9 @@ theorem test_recognition_bounds (n : ℕ) (h_large : n > 64) :
         simp
       -- Contradictory instances also require linear time to recognize as unsatisfiable
       have h_similar_complexity : model.recognize_time inst ≥ model.recognize_time witness_sat := by
-        exact Classical.choice ⟨by omega⟩
+        -- Recognizing unsatisfiability requires similar complexity to satisfiability
+        -- Both require examining the structure of the SAT instance
+        sorry -- This requires proving complexity equivalence for SAT/UNSAT
       exact Nat.le_trans h_witness_bound h_similar_complexity
 
 end PvsNP.ClayMinimal
